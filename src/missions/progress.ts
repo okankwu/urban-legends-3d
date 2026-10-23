@@ -1,5 +1,6 @@
 import { useGame } from '../store/game'
 import { rt } from '../engine/runtime'
+import type { DriverData } from '../driver/rewards'
 
 const KEY = 'ul3d.progress.v1'
 
@@ -19,6 +20,7 @@ export interface Progress {
   ownedVehicles?: string[]
   currentVehicle?: string
   paint?: Record<string, string>
+  driver?: DriverData
 }
 
 export function loadProgress(): Progress | null {
@@ -58,6 +60,7 @@ export function saveProgress(resume: { id: string; step: number } | null): boole
     ownedVehicles: s.ownedVehicles,
     currentVehicle: s.currentVehicle,
     paint: s.paint,
+    driver: s.driver,
   }
   try {
     localStorage.setItem(KEY, JSON.stringify(p))

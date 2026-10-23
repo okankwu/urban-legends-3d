@@ -4,10 +4,13 @@ import { loadAppearance } from '../characters/appearance'
 import type { Appearance } from '../characters/appearance'
 import { loadProgress } from '../missions/progress'
 import type { ActiveMission, Banner, Marker, RaceHud } from '../missions/types'
+import { defaultDriver, normalizeDriver } from '../driver/rewards'
+import type { DriverData } from '../driver/rewards'
+import type { JobHud, JobResult } from '../driver/types'
 
 export type Quality = 'low' | 'medium' | 'high'
 export type Weather = 'clear' | 'cloudy' | 'rain' | 'storm' | 'fog'
-export type Phase = 'menu' | 'creator' | 'playing' | 'paused' | 'shop' | 'map' | 'journal' | 'garage'
+export type Phase = 'menu' | 'creator' | 'playing' | 'paused' | 'shop' | 'map' | 'journal' | 'garage' | 'jobs'
 
 export interface GameState {
   phase: Phase
@@ -74,6 +77,25 @@ export interface GameState {
   uiScale: number
   touch: 'auto' | 'on' | 'off'
   bindings: Record<string, string>
+  /** persistent driver progression (points, xp, history, achievements) */
+  driver: DriverData
+  /** the active driver job as shown on the HUD */
+  djJob: JobHud | null
+  /** 3D / GPS markers for the active driver job */
+  djMarkers: Marker[]
+  djPrompt: string
+  /** set when a job finishes; shows the completion panel */
+  djResult: JobResult | null
+  camMode: 'chase' | 'cockpit'
+  /** dashboard navigation screen powered on */
+  gpsOn: boolean
+  /** dashboard screen shows the live map (true) or the home page (false) */
+  gpsView: 'map' | 'home'
+  gpsExpanded: boolean
+  /** floating GPS overlay in the chase camera */
+  gpsOverlay: boolean
+  /** label of the dashboard button under the crosshair/cursor */
+  dashHover: string
   set: (p: Partial<GameState>) => void
 }
 
@@ -92,7 +114,7 @@ export function saveSettings() {
   try {
     localStorage.setItem(
       SETTINGS_KEY,
-      JSON.stringify({ sensitivity: s.sensitivity, camDistance: s.camDistance, quality: s.quality, volume: s.volume, music: s.music, showFps: s.showFps, captions: s.captions, autoQuality: s.autoQuality, reduceMotion: s.reduceMotion, highContrast: s.highContrast, colorblind: s.colorblind, uiScale: s.uiScale, touch: s.touch, bindings: s.bindings }),
+      JSON.stringify({ sensitivity: s.sensitivity, camDistance: s.camDistance, quality: s.quality, volume: s.volume, music: s.music, showFps: s.showFps, captions: s.captions, autoQuality: s.autoQuality, reduceMotion: s.reduceMotion, highContrast: s.highContrast, colorblind: s.colorblind, uiScale: s.uiScale, touch: s.touch, bindings: s.bindings, gpsOverlay: s.gpsOverlay, gpsOn: s.gpsOn, camMode: s.camMode }),
     )
   } catch {
     /* storage unavailable */
@@ -106,7 +128,7 @@ if (import.meta.env.DEV) {
 function progressDefaults(): Partial<GameState> {
   const p = loadProgress()
   if (!p) return {}
-  return { money: p.money, health: p.health, completed: p.completed, earnedTotal: p.earnedTotal, jobsDone: p.jobsDone, reputation: p.reputation, unlocks: p.unlocks, hour: p.hour, ownedVehicles: p.ownedVehicles ?? ['subaru'], currentVehicle: p.currentVehicle ?? 'subaru', paint: p.paint ?? {} }
+  return { driver: normalizeDriver(p.driver), money: p.money, health: p.health, completed: p.completed, earnedTotal: p.earnedTotal, jobsDone: p.jobsDone, reputation: p.reputation, unlocks: p.unlocks, hour: p.hour, ownedVehicles: p.ownedVehicles ?? ['subaru'], currentVehicle: p.currentVehicle ?? 'subaru', paint: p.paint ?? {} }
 }
 
 export const useGame = create<GameState>((set) => ({
@@ -168,6 +190,17 @@ export const useGame = create<GameState>((set) => ({
   uiScale: 1,
   touch: 'auto',
   bindings: {},
+  driver: defaultDriver(),
+  djJob: null,
+  djMarkers: [],
+  djPrompt: '',
+  djResult: null,
+  camMode: 'chase',
+  gpsOn: true,
+  gpsView: 'map',
+  gpsExpanded: false,
+  gpsOverlay: true,
+  dashHover: '',
   ...progressDefaults(),
   ...loadSettings(),
   set: (p) => set(p),

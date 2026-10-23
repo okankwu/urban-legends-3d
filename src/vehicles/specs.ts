@@ -18,6 +18,8 @@ export interface Prepared {
   /** brake/head/indicator light positions (chassis space) */
   lightY: number
   isBike?: boolean
+  /** driver's eye position and dash geometry in chassis space (cockpit camera + dashboard) */
+  cockpit?: { eye: [number, number, number]; belt: number; zFront: number; /** rear of the cabin; when set the dash module lays a dark interior floor over the body's top face */ zBack?: number; noDash?: boolean }
 }
 
 export interface VehicleSpec {
@@ -98,6 +100,13 @@ interface CarDims {
   cabinZ: number
 }
 
+/** Driver eye and dash placement derived from the body dimensions (left-hand drive: the driver is on +x). */
+function cockpitFor(d: CarDims, kind: string, belt: number): NonNullable<Prepared['cockpit']> {
+  const zFront = kind === 'van' ? d.L / 2 - 0.4 : d.cabinZ + d.cabinL / 2
+  const zBack = kind === 'van' ? -d.L / 2 + 0.1 : d.cabinZ - d.cabinL / 2
+  return { eye: [Math.min(0.38, d.W * 0.2), belt + (kind === 'apex' ? 0.36 : 0.3), zFront - 1.05], belt, zFront, zBack }
+}
+
 function carShell(d: CarDims, color: string, kind: 'sedan' | 'suv' | 'pickup' | 'van' | 'apex'): Prepared {
   const root = new THREE.Group()
   const paintMat = new THREE.MeshStandardMaterial({ color, roughness: 0.35, metalness: 0.5 })
@@ -109,7 +118,10 @@ function carShell(d: CarDims, color: string, kind: 'sedan' | 'suv' | 'pickup' | 
 
   if (kind === 'van') {
     box(d.W, d.hBody + d.cabinH, d.L, 0, yBodyBottom + (d.hBody + d.cabinH) / 2, 0, paintMat, root)
-    box(d.W - 0.1, d.cabinH * 0.55, 0.06, 0, yBodyBottom + d.hBody + d.cabinH * 0.35, d.L / 2 - 0.4, glass, root) // windscreen
+    // windscreen: a one-sided plane facing forward, so it is dark from outside but see-through from the driver's seat
+    const ws = new THREE.Mesh(new THREE.PlaneGeometry(d.W - 0.1, d.cabinH * 0.55), glass)
+    ws.position.set(0, yBodyBottom + d.hBody + d.cabinH * 0.35, d.L / 2 - 0.4 + 0.035)
+    root.add(ws)
     box(d.W + 0.01, 0.1, d.L * 0.98, 0, yBodyBottom + 0.1, 0, glass, root)
   } else if (kind === 'pickup') {
     box(d.W, d.hBody, d.L, 0, yBody, 0, paintMat, root)
@@ -145,6 +157,7 @@ function carShell(d: CarDims, color: string, kind: 'sedan' | 'suv' | 'pickup' | 
     wheelCy: d.cy,
     paint: [paintMat],
     lightY: yBodyBottom + d.hBody * 0.65,
+    cockpit: cockpitFor(d, kind, yBodyBottom + d.hBody),
   }
 }
 
@@ -175,6 +188,7 @@ function bike(color: string): Prepared {
     paint: [paintMat],
     lightY: cy + 0.45,
     isBike: true,
+    cockpit: { eye: [0, cy + 1.2, -0.35], belt: cy + 0.7, zFront: 0.4, noDash: true },
   }
 }
 

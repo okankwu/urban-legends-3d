@@ -80,7 +80,7 @@ export default function Minimap() {
       const cs = Math.cos(rot)
       const sn = Math.sin(rot)
       const garageBlips = activeGarages(st.unlocks).map((g) => ({ x: g.x, z: g.z, kind: 'pickup' as const }))
-      for (const m of [...st.markers, ...st.startMarkers, ...garageBlips]) {
+      for (const m of [...st.djMarkers, ...st.markers, ...st.startMarkers, ...garageBlips]) {
         if (m.kind === 'search') continue
         const dx = m.x - px
         const dz = m.z - pz

@@ -20,6 +20,7 @@ export default function Interactions() {
       const fx = st.inVehicle ? rt.vehiclePos.x : rt.playerPos.x
       const fz = st.inVehicle ? rt.vehiclePos.z : rt.playerPos.z
       const g = activeGarages(st.unlocks).find((q) => Math.hypot(q.x - fx, q.z - fz) < 5.5)
+      rt.nearGarage = !!g
       if (g) {
         set('G  Open ' + g.name)
         if (consumePressed('KeyG')) {

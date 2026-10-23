@@ -3,7 +3,7 @@ import { useGame } from '../store/game'
 import { sfx } from '../engine/audio'
 import { JOB_BOARD, MISSIONS, makeJob, mission } from './missions'
 import type { Ctx, MissionDef } from './missions'
-import { banner, repairCar, teleportCar, teleportPlayer } from './actions'
+import { banner, failHooks, repairCar, resetHooks, teleportCar, teleportPlayer } from './actions'
 import { clearProgress, loadProgress, saveProgress } from './progress'
 import { stopRace } from './Race'
 import type { Marker } from './types'
@@ -119,6 +119,7 @@ function fail(a: Active, why: string) {
 /** Fails whatever is active (used when the player is arrested). */
 export function failCurrent(reason: string) {
   if (active) fail(active, reason)
+  for (const h of failHooks) h(reason)
 }
 
 export function abandon() {
@@ -168,6 +169,7 @@ export function newGame() {
     paint: {},
     inShop: null,
   })
+  for (const h of resetHooks) h()
   teleportPlayer(0, 1.5, 5)
   teleportCar(12, -3, Math.PI / 2)
 }
@@ -215,7 +217,7 @@ export function tickMissions(dt: number) {
   let mprompt = ''
   if (!active) {
     // first mission starts by itself on a fresh game
-    if (!st.completed.length && !st.hasProgress) {
+    if (!st.completed.length && !st.hasProgress && !st.djJob) {
       autoStart += dt
       if (autoStart > 2) {
         autoStart = -1e9
@@ -223,14 +225,14 @@ export function tickMissions(dt: number) {
       }
     }
     const next = MISSIONS.find((m) => !st.completed.includes(m.id))
-    if (cooldown > 0) {
-      /* just finished something: do not retrigger the marker you are standing on */
+    if (cooldown > 0 || st.djJob) {
+      /* just finished something, or a driver job is running: do not retrigger the marker you are standing on */
     } else if (next && !inside && Math.hypot(x - next.hub.x, z - next.hub.z) < 3.4) startMission(next)
     else if (st.completed.includes('delivery') && st.vehicleHealth > 0 && !inside && Math.hypot(x - JOB_BOARD.x, z - JOB_BOARD.z) < 3.4) startMission(makeJob())
   } else {
     const a = active
     // courier jobs can be taken while a passive mission (reputation) is running
-    if (a.def.passive && cooldown <= 0 && st.vehicleHealth > 0 && !inside && st.completed.includes('delivery') && Math.hypot(x - JOB_BOARD.x, z - JOB_BOARD.z) < 3.4) {
+    if (a.def.passive && cooldown <= 0 && !st.djJob && st.vehicleHealth > 0 && !inside && st.completed.includes('delivery') && Math.hypot(x - JOB_BOARD.x, z - JOB_BOARD.z) < 3.4) {
       startMission(makeJob())
       return
     }

@@ -17,7 +17,7 @@ Click **Start Game** (this also captures the mouse). **Esc** pauses; click **Res
 Requirements: a current Chrome, Edge, Firefox or Safari with WebGL2/WebGL; a desktop GPU for 60 fps at High.
 
 ### Deploy
-`npm run build`, then upload `dist/` to any static host (Netlify, Vercel, GitHub Pages, S3, itch.io HTML5). No server is needed. Models are loaded from `/models/` so serve the folder from the site root.
+`npm run build`, then upload `dist/` to any static host (Netlify, Vercel, GitHub Pages, S3, itch.io HTML5). No server is needed. Asset URLs are relative (`base: ./`), so it also works from a sub-path such as GitHub Pages.
 
 ## Controls (all rebindable in Controls)
 
@@ -30,10 +30,13 @@ Requirements: a current Chrome, Edge, Firefox or Safari with WebGL2/WebGL; a des
 | C | Crouch |
 | E | Interact: enter vehicle, shops, talk, ask for clues |
 | F | Exit vehicle |
-| G | Open garage (blue pads) |
+| G | Open garage (blue pads); in a vehicle anywhere else: toggle the dashboard GPS |
 | H / L / Z X | Horn / headlights / indicators |
 | R | Reset a flipped vehicle |
-| M | Map (click = waypoint, right-click = clear) |
+| M | Full-screen city map with the GPS route (click = waypoint, right-click = clear) |
+| J | Driver Jobs menu |
+| V | Cockpit (first-person) / chase camera |
+| N | Expand / close the large GPS overlay (Esc also closes it) |
 | Tab | Journal |
 | Esc | Pause |
 
@@ -49,6 +52,25 @@ Touch screens get an on-screen joystick (drag the right side to look) and button
 - **Economy** – cash from missions/jobs/races; spend on vehicles, repairs, paint, outfits and supplies; garages; districts unlock with progress.
 - **Police** – wanted level from running people over and crashing; pursuit, escape and arrest (fine) mechanics.
 - **Save/load** – character (localStorage + IndexedDB for uploaded models), settings, money, health, missions, unlocks, owned vehicles, paint, time of day and positions (Save Game in the pause menu; autosaves on mission checkpoints).
+
+## Driver jobs, points and GPS
+
+Press **J** (or Pause → Driver Jobs, or the JOBS button on the dashboard) to take a driver job. One job runs at a time; a story mission that is running is set aside and restarts from its marker.
+
+| Job | Level | What you do | Base points |
+|---|---|---|---|
+| Taxi | 1 | stop at the passenger, **E**, drive to the drop-off | 100–300 |
+| Parking | 1 | park inside a marked bay (score from accuracy, damage, time) | 50–200 |
+| Delivery | 2 | collect a package at a warehouse (**E**), deliver before the timer ends | 150–400 |
+| Long distance | 3 | three checkpoints, then the destination | 200–600 |
+| Emergency | 4 | patient to hospital, emergency supplies, or fire support (hold position) | 300–700 |
+| Street race | 5 | the downtown ring race against three AI drivers | 1st 1,000 · 2nd 600 · 3rd 300 · 4th 100 |
+
+- **Rewards:** bonuses for no damage, finishing on time/early, following the route, a clean police record and consecutive completions; daily challenges (3 a day) and achievements. Failed or abandoned jobs pay nothing and break the streak. Every job has a unique id that is stored once paid, so a reward cannot be claimed twice.
+- **Levels** (XP is separate from the spendable points balance): Rookie 0 · City Driver 500 · Skilled 1,500 · Professional 3,000 · Elite 5,000. Spendable points can be redeemed in the Rewards tab (vehicle repair, cash).
+- **Saving:** points, XP, history, streak, achievements and daily progress are part of the normal progress save and are written the moment a job pays out.
+- **Leaderboard:** local only. The other drivers are fictional characters for comparison, not real players.
+- **GPS:** A* routing over the real road grid (the same one the city and traffic use), turn-by-turn instructions with street names, distance and ETA, re-routing when you leave the route or drive it the wrong way. It is drawn in the dashboard screen of every car-type vehicle (cockpit view, **V**), as a floating overlay in the chase camera, and in an expanded overlay (**N**). The MAP / GPS / EXPAND / JOBS buttons on the dashboard are real 3D objects: look at one with the crosshair (or point with the cursor), it highlights, and a click presses it. The motorcycle has a first-person view but no dashboard screen (use the floating overlay).
 
 ## Performance
 
@@ -91,7 +113,12 @@ public/models/  player.glb, player2.glb, subaru.glb
 
 Verified in a browser while building (desktop, keyboard): game loads without console errors; movement, sprint, jump, crouch, camera follow; building collision; entering/driving/exiting vehicles (all seven classes driven); character creator, save/restore across refresh, upload validation (rejects static meshes and unrecognised rigs, accepts Mixamo- and VRM-style skeletons); traffic obeying signals and pedestrian crossing (numeric sampling); shops, purchases, garage UI; all five missions through their state machine, race, courier jobs, fail/checkpoint, save/continue; district barricade blocks then opens; weather; wanted level, pursuit and arrest; key rebinding; production build.
 
+Driver jobs and GPS (tested in the dev browser with scripted input and car teleports): all six job types completed and paid, parking rejects crooked or off-centre cars, timer / wreck / abandon failures pay nothing, a paid job cannot be re-accepted, points and history survive a reload, New Game resets them, the route stays on the road grid (200 random routes checked against the grid), leaving the route triggers a re-plan, dashboard buttons respond to the crosshair ray and a click, Esc closes the expanded GPS without pausing, and the cockpit view works in the Subaru, sedan, SUV, pickup, van, Apex and motorcycle.
+
 Not verified / known limits:
+- Dashboard buttons were pressed with a synthesized click while aiming by script; I did not use a real mouse with pointer lock. The driver-job and GPS touch buttons (Jobs, GPS, Big map, View) were not tried on a touch device.
+- There is no ambulance or fire-truck model: emergency jobs use whichever vehicle you drive. Vehicle upgrades are not part of the rewards (points buy repairs and cash only). No GPS voice guidance, and the dashboard has no sound of its own.
+- The in-car screen was checked at the small size of the preview pane, not on a large monitor.
 - Audio was confirmed to initialise and fire events, but was never listened to.
 - The touch controls compile and the joystick state updates, but I could not drive the character with them (the preview pane was hidden and throttled) and did not test on a real phone. No gamepad support.
 - Only one body is supplied (male); "Model A/B" are two outfits of it. Colour tinting, hair styles and accessories only apply to the built-in models. Face shape comes from the texture.

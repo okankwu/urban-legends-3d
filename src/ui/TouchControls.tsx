@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useGame } from '../store/game'
 import { rt } from '../engine/runtime'
 import { isTouchUi } from '../engine/input'
+import { setExpanded, toggleGps } from '../driver/dashActions'
 
 const STICK = 120 // joystick diameter in CSS px
 
@@ -17,7 +18,11 @@ function Btn({ code, label, cls = '', tap = false }: { code: string; label: stri
       className={'tbtn ' + cls}
       aria-label={label}
       onPointerDown={(e) => {
-        e.currentTarget.setPointerCapture(e.pointerId)
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId)
+        } catch {
+          /* synthetic or already-released pointers cannot be captured */
+        }
         press(code, true)
         if (tap) window.setTimeout(() => press(code, false), 90)
       }}
@@ -25,6 +30,15 @@ function Btn({ code, label, cls = '', tap = false }: { code: string; label: stri
       onPointerCancel={() => !tap && press(code, false)}
       onContextMenu={(e) => e.preventDefault()}
     >
+      {label}
+    </button>
+  )
+}
+
+/** A plain tap button that runs an action directly (used for the GPS controls, which are not key-table based). */
+function Do({ label, run, cls = '' }: { label: string; run: () => void; cls?: string }) {
+  return (
+    <button className={'tbtn ' + cls} aria-label={label} onClick={run} onContextMenu={(e) => e.preventDefault()}>
       {label}
     </button>
   )
@@ -127,6 +141,7 @@ export default function TouchControls() {
       <div className="touch-top">
         <button className="tbtn small" aria-label="Map" onClick={() => set({ phase: 'map' })}>Map</button>
         <button className="tbtn small" aria-label="Journal" onClick={() => set({ phase: 'journal' })}>Log</button>
+        <button className="tbtn small" aria-label="Driver jobs" onClick={() => set({ phase: 'jobs', gpsExpanded: false })}>Jobs</button>
         <button className="tbtn small" aria-label="Pause" onClick={() => set({ phase: 'paused' })}>Ⅱ</button>
       </div>
       <div className="touch-actions">
@@ -143,7 +158,11 @@ export default function TouchControls() {
             <Btn code="KeyC" label="Duck" />
           </>
         )}
-        <Btn code={inCar ? 'KeyG' : 'KeyE'} label={inCar ? 'Garage' : near ? 'Enter' : 'Use'} cls="primary" tap />
+        {inCar ? <Do label="GPS" cls="primary" run={toggleGps} /> : <Btn code="KeyE" label={near ? 'Enter' : 'Use'} cls="primary" tap />}
+        {inCar && <Btn code="KeyE" label="Use" tap />}
+        {inCar && <Do label="Big map" run={() => setExpanded(!useGame.getState().gpsExpanded)} />}
+        {inCar && <Do label="View" run={() => set({ camMode: useGame.getState().camMode === 'chase' ? 'cockpit' : 'chase' })} />}
+        {inCar && <Btn code="KeyG" label="Garage" tap />}
         {!inCar && <Btn code="KeyG" label="Garage" tap />}
       </div>
     </div>

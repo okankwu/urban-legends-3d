@@ -56,7 +56,7 @@ export default function Player() {
     if (!st.inVehicle && near && consumePressed('KeyE')) {
       st.set({ inVehicle: true, nearVehicle: false })
       b.setEnabled(false)
-    } else if (st.inVehicle && (consumePressed('KeyF') || consumePressed('KeyE')) && rt.vehicleSpeed < 9) {
+    } else if (st.inVehicle && (consumePressed('KeyF') || (!rt.driverInteract && consumePressed('KeyE'))) && rt.vehicleSpeed < 9) {
       const s = Math.sin(rt.vehicleYaw)
       const c = Math.cos(rt.vehicleYaw)
       // exit on the driver's (left) side of the car; left = +x in chassis space

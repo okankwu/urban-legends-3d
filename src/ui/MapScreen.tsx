@@ -6,6 +6,7 @@ import { useGame } from '../store/game'
 import type { MarkerKind } from '../missions/types'
 import { markerColor } from './palette'
 import { activeGarages } from '../garage/garages'
+import { gps } from '../driver/gps'
 
 const RANGE = HALF_WORLD + 24
 export const MARKER_COLOR = new Proxy({} as Record<MarkerKind, string>, { get: (_t, k) => markerColor(k as MarkerKind) })
@@ -15,6 +16,7 @@ export default function MapScreen() {
   const ref = useRef<HTMLCanvasElement>(null)
   const markers = useGame((s) => s.markers)
   const starts = useGame((s) => s.startMarkers)
+  const dj = useGame((s) => s.djMarkers)
   const set = useGame((s) => s.set)
   const size = Math.max(280, Math.min(window.innerWidth - 320, window.innerHeight - 60, 840))
 
@@ -61,7 +63,20 @@ export default function MapScreen() {
         g.fillStyle = '#e8f6ff'
         g.fillText(gr.name, tx(gr.x), tz(gr.z) - 9)
       }
-      const all = [...st.markers, ...st.startMarkers]
+      // the GPS route over the real road network
+      const rt2 = gps.route
+      if (rt2 && gps.target) {
+        g.lineJoin = 'round'
+        g.lineCap = 'round'
+        for (const [col, w] of [['#0a2a55', 8], ['#3da5ff', 5]] as const) {
+          g.strokeStyle = col
+          g.lineWidth = w
+          g.beginPath()
+          rt2.pts.forEach((p, i) => (i ? g.lineTo(tx(p.x), tz(p.z)) : g.moveTo(tx(p.x), tz(p.z))))
+          g.stroke()
+        }
+      }
+      const all = [...st.djMarkers, ...st.markers, ...st.startMarkers]
       for (const m of all) {
         if (m.kind !== 'search') continue
         g.strokeStyle = 'rgba(255,107,107,.9)'
@@ -128,7 +143,7 @@ export default function MapScreen() {
     return { x: ((e.clientX - r.left) / r.width) * RANGE * 2 - RANGE, z: ((e.clientY - r.top) / r.height) * RANGE * 2 - RANGE }
   }
 
-  const all = [...markers, ...starts].filter((m) => m.kind !== 'search')
+  const all = [...dj, ...markers, ...starts].filter((m) => m.kind !== 'search')
   return (
     <div className="overlay" role="dialog" aria-label="City map">
       <div className="map-wrap">

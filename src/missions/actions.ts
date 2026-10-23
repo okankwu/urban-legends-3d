@@ -4,6 +4,10 @@ import { rt } from '../engine/runtime'
 import { sfx } from '../engine/audio'
 import type { Banner } from './types'
 
+/** Other systems (driver jobs) register here so story-level events reach them without circular imports. */
+export const failHooks: ((why: string) => void)[] = []
+export const resetHooks: (() => void)[] = []
+
 let bannerTimer = 0
 let bannerId = 1
 

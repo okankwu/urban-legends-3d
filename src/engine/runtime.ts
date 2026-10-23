@@ -1,4 +1,4 @@
-import { Vector3 } from 'three'
+import { Quaternion, Vector3 } from 'three'
 import type { RapierRigidBody } from '@react-three/rapier'
 
 /** Mutable per-frame state shared between systems without triggering React renders. */
@@ -28,6 +28,18 @@ export const rt = {
   walkSpeed: 0,
   grounded: true,
   hornTime: -10,
+  /** chassis orientation, steering angle and size of the player's vehicle (cockpit camera + dashboard) */
+  vehicleQuat: new Quaternion(),
+  steer: 0,
+  cockpit: null as null | { eye: [number, number, number]; belt: number; zFront: number; noDash?: boolean },
+  vehicleDims: { l: 2.2, w: 0.95 },
+  /** head look angles in the cockpit camera */
+  headYaw: 0,
+  headPitch: 0,
+  /** a driver-job prompt is using the E key (so E does not also exit the car) */
+  driverInteract: false,
+  /** true while the player stands at a garage pad (G opens the garage instead of toggling GPS) */
+  nearGarage: false,
   creatorYaw: 0.4,
   creatorZoom: 3.4,
   keys: {} as Record<string, boolean>,

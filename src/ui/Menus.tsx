@@ -207,6 +207,7 @@ export default function Menus() {
             </button>
             {s.phase === 'menu' && s.hasProgress && <button onClick={fresh}>New Game</button>}
             {s.phase === 'paused' && <button onClick={save}>Save Game</button>}
+            {s.phase === 'paused' && <button onClick={() => s.set({ phase: 'jobs' })}>Driver Jobs</button>}
             <button onClick={openCreator}>Character Creator</button>
             <button onClick={() => s.set({ panel: 'controls' })}>Controls</button>
             <button onClick={() => s.set({ panel: 'settings' })}>Settings</button>

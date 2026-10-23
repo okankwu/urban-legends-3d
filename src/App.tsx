@@ -31,6 +31,9 @@ import { RaceCars } from './missions/Race'
 import HUD from './ui/HUD'
 import Menus from './ui/Menus'
 import { installInput } from './engine/input'
+import DriverSystem from './driver/DriverSystem'
+import DriverScene3D from './driver/DriverScene3D'
+import DriverJobsMenu from './ui/DriverJobsMenu'
 import { useGame } from './store/game'
 import Creator from './characters/Creator'
 import CreatorStage from './characters/CreatorStage'
@@ -99,6 +102,8 @@ function Game() {
         <PerfProbe />
         <DevStepper />
         <MissionSystem />
+        <DriverSystem />
+        <DriverScene3D />
         <ShopFronts />
         <AudioSystem />
         <Suspense fallback={null}>
@@ -119,7 +124,8 @@ function Game() {
       </Canvas>
       <Loader />
       {showFps && <FpsMeter />}
-      {(phase === 'playing' || phase === 'paused' || phase === 'shop' || phase === 'map' || phase === 'journal' || phase === 'garage') && <HUD />}
+      {(phase === 'playing' || phase === 'paused' || phase === 'shop' || phase === 'map' || phase === 'journal' || phase === 'garage' || phase === 'jobs') && <HUD />}
+      {phase === 'jobs' && <DriverJobsMenu />}
       {phase === 'creator' && <Creator />}
       {phase === 'map' && <MapScreen />}
       {phase === 'journal' && <Journal />}

@@ -32,6 +32,7 @@ function Beam({ m }: { m: Marker }) {
 export default function Markers3D() {
   const markers = useGame((s) => s.markers)
   const starts = useGame((s) => s.startMarkers)
+  const dj = useGame((s) => s.djMarkers)
   const phase = useGame((s) => s.phase)
   const inShop = useGame((s) => s.inShop)
   if (inShop || phase === 'creator') return null
@@ -39,6 +40,9 @@ export default function Markers3D() {
     <>
       {markers.map((m, i) => (
         <Beam key={'m' + i + m.kind} m={m} />
+      ))}
+      {dj.map((m, i) => (
+        <Beam key={'d' + i + m.kind} m={m} />
       ))}
       {starts.map((m, i) => (
         <Beam key={'s' + i + m.kind} m={m} />

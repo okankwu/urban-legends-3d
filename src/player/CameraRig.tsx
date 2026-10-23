@@ -9,6 +9,9 @@ const desired = new THREE.Vector3()
 const smoothed = new THREE.Vector3()
 let init = false
 const dist = { current: 0 }
+const eye = new THREE.Vector3()
+const qHead = new THREE.Quaternion()
+const eHead = new THREE.Euler(0, 0, 0, 'YXZ')
 import { STAGE_Y } from '../characters/CreatorStage'
 
 export default function CameraRig() {
@@ -33,6 +36,30 @@ export default function CameraRig() {
     }
     const dt = Math.min(rawDt, 0.05)
     const inCar = st.inVehicle
+    const cam = camera as THREE.PerspectiveCamera
+
+    // first-person cockpit view: the camera sits at the driver's eye and turns with the head
+    if (inCar && st.camMode === 'cockpit' && rt.cockpit) {
+      if (cam.fov !== 74) {
+        cam.fov = 74
+        cam.updateProjectionMatrix()
+      }
+      if (performance.now() - rt.lastMouse > 4000 && rt.vehicleSpeed > 3 && !st.dashHover) {
+        rt.headYaw *= Math.exp(-1.4 * dt)
+        rt.headPitch *= Math.exp(-1.4 * dt)
+      }
+      eye.set(rt.cockpit.eye[0], rt.cockpit.eye[1], rt.cockpit.eye[2]).applyQuaternion(rt.vehicleQuat).add(rt.vehiclePos)
+      camera.position.copy(eye)
+      eHead.set(rt.headPitch, Math.PI + rt.headYaw, 0)
+      qHead.setFromEuler(eHead)
+      camera.quaternion.copy(rt.vehicleQuat).multiply(qHead)
+      init = false
+      return
+    }
+    if (cam.fov !== 62) {
+      cam.fov = 62
+      cam.updateProjectionMatrix()
+    }
 
     if (inCar && rt.vehicleSpeed > 3 && performance.now() - rt.lastMouse > 1500) {
       // ease the camera behind the car when the player is not steering the view

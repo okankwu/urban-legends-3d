@@ -11,6 +11,7 @@ import { SPAWN } from '../city/layout'
 import { buildProcedural, spec as specOf } from './specs'
 import type { Prepared, VehicleSpec } from './specs'
 import { reportCrash } from '../police/wanted'
+import Dashboard from './Dashboard'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 const CAR_URL = import.meta.env.BASE_URL + 'models/subaru.glb'
@@ -142,6 +143,11 @@ function prepareGLB(source: THREE.Object3D): Prepared {
     wheelCy,
     paint: [],
     lightY: wheelCy - radius + 0.28 + 0.62,
+    cockpit: (() => {
+      const ground = wheelCy - radius
+      const belt = ground + 0.93
+      return { eye: [0.36, belt + 0.28, -0.25] as [number, number, number], belt, zFront: 0.8 }
+    })(),
   }
 }
 
@@ -172,6 +178,12 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
       if (m.isMesh) m.castShadow = quality !== 'low'
     })
   }, [prep, quality])
+
+  useEffect(() => {
+    rt.cockpit = prep.cockpit ?? null
+    rt.vehicleDims.l = prep.halfL * 0.96
+    rt.vehicleDims.w = prep.halfW * 0.92
+  }, [prep])
 
   useEffect(() => {
     const b = body.current
@@ -211,6 +223,8 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
     const q = new THREE.Quaternion(r.x, r.y, r.z, r.w)
     const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(q)
     rt.vehiclePos.set(t.x, t.y, t.z)
+    rt.vehicleQuat.copy(q)
+    rt.steer = steer.current
     rt.vehicleYaw = Math.atan2(fwd.x, fwd.z)
     const lv = b.linvel()
     const forwardSpeed = lv.x * fwd.x + lv.y * fwd.y + lv.z * fwd.z
@@ -343,6 +357,7 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
       <CuboidCollider args={[halfW, hh, prep.halfL * 0.96]} position={[0, bottom + hh, 0]} mass={spec.mass * 0.64} />
       <CuboidCollider args={[Math.min(0.5, halfW), 0.1, 0.9]} position={[0, bottom + 0.1, 0]} mass={spec.mass * 0.36} />
       <primitive object={prep.root} />
+      <Dashboard prep={prep} />
       <group>
         {[-lamp, lamp].map((x) => (
           <mesh key={'b' + x} position={[x, lightY, -prep.halfL * 0.985]} material={brakeMat}>

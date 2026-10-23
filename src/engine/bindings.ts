@@ -15,11 +15,14 @@ export const ACTIONS: ActionDef[] = [
   { id: 'crouch', label: 'Crouch', def: 'KeyC' },
   { id: 'interact', label: 'Interact / enter vehicle', def: 'KeyE' },
   { id: 'exit', label: 'Exit vehicle', def: 'KeyF' },
-  { id: 'garage', label: 'Open garage', def: 'KeyG' },
+  { id: 'garage', label: 'Open garage / toggle dashboard GPS', def: 'KeyG' },
   { id: 'horn', label: 'Horn', def: 'KeyH' },
   { id: 'lights', label: 'Headlights', def: 'KeyL' },
   { id: 'reset', label: 'Reset flipped vehicle', def: 'KeyR' },
-  { id: 'map', label: 'Map', def: 'KeyM' },
+  { id: 'map', label: 'City map', def: 'KeyM' },
+  { id: 'gpsx', label: 'Expand / close GPS overlay', def: 'KeyN' },
+  { id: 'jobs', label: 'Driver jobs', def: 'KeyJ' },
+  { id: 'cockpit', label: 'Cockpit / chase camera', def: 'KeyV' },
   { id: 'journal', label: 'Journal', def: 'Tab' },
 ]
 
