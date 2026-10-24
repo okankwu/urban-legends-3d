@@ -87,10 +87,8 @@ export default function Dashboard({ prep }: { prep: Prepared }) {
     const cam = camera as THREE.PerspectiveCamera
     const th = Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2)
     t.dir.set(ndcX * th * cam.aspect, ndcY * th, -1).normalize()
-    t.e.set(rt.headPitch, Math.PI + rt.headYaw, 0)
-    t.q.setFromEuler(t.e)
-    t.dir.applyQuaternion(t.q)
-    t.org.set(cp.eye[0], cp.eye[1], cp.eye[2])
+    t.dir.applyQuaternion(rt.camRel.quat)
+    t.org.copy(rt.camRel.pos)
     let best = -1
     let bestT = 2.6
     btnMeshes.current.forEach((mesh, i) => {
@@ -105,7 +103,8 @@ export default function Dashboard({ prep }: { prep: Prepared }) {
       t.o.copy(t.org).applyMatrix4(t.inv)
       t.d.copy(t.dir).transformDirection(t.inv)
       // ray / box slab test against the button's 0.074 x 0.036 x 0.014 body
-      const half = [0.037, 0.018, 0.007]
+      const grow = hover.current === i ? 1.35 : 1 // hysteresis: stay on the hovered button until the crosshair is clearly off it
+      const half = [0.037 * grow, 0.018 * grow, 0.007]
       const oo = [t.o.x, t.o.y, t.o.z]
       const dd = [t.d.x, t.d.y, t.d.z]
       let t0 = 0

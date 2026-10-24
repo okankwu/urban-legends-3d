@@ -12,6 +12,17 @@ const dist = { current: 0 }
 const eye = new THREE.Vector3()
 const qHead = new THREE.Quaternion()
 const eHead = new THREE.Euler(0, 0, 0, 'YXZ')
+// cockpit stabiliser: the body's pitch and roll (not its heading) and the eye height are low-passed so suspension buzz,
+// frame-time spikes and bumps do not shake the view, while turning and braking still lean the camera a little
+const yawQ = new THREE.Quaternion()
+const tiltQ = new THREE.Quaternion()
+const smoothTilt = new THREE.Quaternion()
+const UP = new THREE.Vector3(0, 1, 0)
+const invQ = new THREE.Quaternion()
+let smoothY = 0
+let cockpitWas = false
+const TILT_TAU = 0.12
+const HEIGHT_TAU = 0.09
 import { STAGE_Y } from '../characters/CreatorStage'
 
 export default function CameraRig() {
@@ -48,14 +59,28 @@ export default function CameraRig() {
         rt.headYaw *= Math.exp(-1.4 * dt)
         rt.headPitch *= Math.exp(-1.4 * dt)
       }
-      eye.set(rt.cockpit.eye[0], rt.cockpit.eye[1], rt.cockpit.eye[2]).applyQuaternion(rt.vehicleQuat).add(rt.vehiclePos)
+      // split the body orientation into its heading and its tilt, and smooth the tilt
+      yawQ.setFromAxisAngle(UP, rt.vehicleYaw)
+      tiltQ.copy(yawQ).invert().multiply(rt.vehicleQuat)
+      if (!cockpitWas) smoothTilt.copy(tiltQ)
+      else smoothTilt.slerp(tiltQ, 1 - Math.exp(-dt / TILT_TAU))
+      const stable = yawQ.clone().multiply(smoothTilt)
+      eye.set(rt.cockpit.eye[0], rt.cockpit.eye[1], rt.cockpit.eye[2]).applyQuaternion(stable).add(rt.vehiclePos)
+      smoothY = !cockpitWas ? eye.y : smoothY + (eye.y - smoothY) * (1 - Math.exp(-dt / HEIGHT_TAU))
+      eye.y = smoothY
+      cockpitWas = true
       camera.position.copy(eye)
       eHead.set(rt.headPitch, Math.PI + rt.headYaw, 0)
       qHead.setFromEuler(eHead)
-      camera.quaternion.copy(rt.vehicleQuat).multiply(qHead)
+      camera.quaternion.copy(stable).multiply(qHead)
+      // remember where the camera sits relative to the chassis, so dashboard buttons are picked exactly where they are drawn
+      invQ.copy(rt.vehicleQuat).invert()
+      rt.camRel.pos.copy(eye).sub(rt.vehiclePos).applyQuaternion(invQ)
+      rt.camRel.quat.copy(invQ).multiply(camera.quaternion)
       init = false
       return
     }
+    cockpitWas = false
     if (cam.fov !== 62) {
       cam.fov = 62
       cam.updateProjectionMatrix()

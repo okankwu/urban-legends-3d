@@ -34,6 +34,8 @@ export const rt = {
   cockpit: null as null | { eye: [number, number, number]; belt: number; zFront: number; noDash?: boolean },
   vehicleDims: { l: 2.2, w: 0.95 },
   /** head look angles in the cockpit camera */
+  /** the cockpit camera's pose in the chassis frame (stabilised eye + head look); dashboard picking uses it */
+  camRel: { pos: new Vector3(), quat: new Quaternion() },
   headYaw: 0,
   headPitch: 0,
   /** a driver-job prompt is using the E key (so E does not also exit the car) */
