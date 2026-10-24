@@ -1,5 +1,3 @@
-import type { Marker } from '../missions/types'
-
 export type JobType = 'taxi' | 'delivery' | 'race' | 'emergency' | 'parking' | 'longdistance'
 
 export interface Place {
@@ -87,4 +85,3 @@ export interface JobResult {
   achievements: string[]
 }
 
-export interface DjMarker extends Marker {}

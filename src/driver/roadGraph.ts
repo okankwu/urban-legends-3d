@@ -31,7 +31,6 @@ export const EW_NAMES = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th',
 /** Highest usable road index right now (3 while the outer districts are locked). */
 export const limit = () => Math.min(roadMax(), ROAD_MAX)
 export const nodePos = (i: number, j: number): Pt => ({ x: i * CELL, z: j * CELL })
-export const inGraph = (i: number, j: number) => Math.abs(i) <= limit() && Math.abs(j) <= limit()
 
 /** Name of the street that runs through grid line index k. alongZ = a north-south street (constant x). */
 export const streetName = (alongZ: boolean, k: number) =>

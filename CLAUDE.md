@@ -49,6 +49,8 @@ Vite + React + TypeScript; R3F (`@react-three/fiber`/`drei`) renders, `@react-th
 - `window.__driver` (dev only) exposes the planner, `buildJob`, `acceptJob` and `drawGps`. `__step` runs with a small effective dt, so a timed stage (e.g. a 4 s hold) needs a few hundred steps.
 - Missions 3–5 were tested by teleporting the car (`teleportCar` in `missions/actions.ts`), not by hand-driving.
 
+**Audio** (`engine/audio.ts`, `engine/music.ts`): everything is synthesised with Web Audio. `music.ts` holds the original track "Neon Boulevard" as data (chords, bass, melody) plus a step scheduler used live (`musicTick`, scheduled ~0.5 s ahead on the audio clock) and offline (`renderTrackWav`, chunked, for the Settings download). The horn (`buildHorn`) is a held two-tone voice.
+
 **Touch / mobile** (`ui/TouchControls.tsx`, `engine/mobile.ts`, `mobile.css`, `ui/MobileExtras.tsx`): `isTouchUi()` (setting + `pointer: coarse`) decides the layout; `initMobile()` mirrors it on `<html data-touch>` so CSS can restyle the HUD. Touch buttons write into the same `rt.keys` / `rt.pressed` table as the keyboard; the joystick feeds `rt.stick` (analog steering in `Car.tsx`, movement in `Player.tsx`). Anything that is a key handler in `input.ts` (G, N, V, J) has no touch equivalent through `rt.pressed`, so touch buttons call the same functions directly (`driver/dashActions.ts`). `public/manifest.webmanifest` + icons make Add-to-Home-Screen fullscreen.
 
 ## Known limits (from README)

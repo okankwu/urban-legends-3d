@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { initAudio, setVolume, sfx, updateAudio } from './audio'
+import { hornHold, initAudio, setVolume, sfx, updateAudio } from './audio'
 import { consumePressed, rt } from './runtime'
 import { useGame } from '../store/game'
 import { nightFactor } from '../city/City'
@@ -37,11 +37,13 @@ export default function AudioSystem() {
     const st = useGame.getState()
     const playing = st.phase === 'playing'
     hornCool -= dt
-    if (playing && st.inVehicle && rt.keys.KeyH && hornCool <= 0) {
-      hornCool = 0.5
+    // the horn sounds for as long as the button is held; pedestrians react every 0.4 s while it blares
+    const hornDown = playing && st.inVehicle && !!rt.keys.KeyH
+    hornHold(hornDown, st.currentVehicle)
+    if (hornDown && hornCool <= 0) {
+      hornCool = 0.4
       rt.hornTime = rt.simTime
-      sfx('horn')
-      caption('[Horn]', 1200)
+      caption('[Horn]', 900)
     }
     if (st.toast && st.toast !== toastSeen) sfx('toast')
     toastSeen = st.toast

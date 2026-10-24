@@ -83,6 +83,10 @@ The game detects touch screens (or use Accessibility → Touch controls → Alwa
 - **Full screen:** Start Game requests fullscreen + landscape on Android Chrome and tablets (also a button in the top row and in Settings). iPhone Safari has no fullscreen for web pages: use Share → Add to Home Screen and launch it from the icon to get a full-screen, landscape app.
 - The pinch / double-tap page zoom and the long-press menu are disabled on the game surface.
 
+## Music
+
+**"Neon Boulevard"** is an original instrumental written for this game (`src/engine/music.ts`): 100 BPM, A minor, 32 bars (about 77 s) that loop through an intro, a groove, a lift with the main melody, and a break. It is composed and synthesised entirely in code (no samples, recordings or borrowed melodies), so it contains nothing third-party; you can use, change and share it freely, including in commercial projects. It plays by default and can be turned off in Settings; it gets mellower at night. **Settings → Download the soundtrack (WAV)** renders the loop to a 22.05 kHz stereo file (about 7 MB, takes up to half a minute) for use elsewhere.
+
 ## Performance
 
 - Instancing for buildings, trees, streetlights, road markings and traffic lights; the player's Subaru (about 160 meshes and 1M triangles originally) is simplified and merged at load (47 MB source to a 2.9 MB GLB with meshopt + WebP textures).
@@ -130,6 +134,7 @@ Phones and tablets (tested only by emulating screen sizes in a desktop browser w
 
 Not verified / known limits:
 - **No real phone or tablet was used.** Not checked on hardware: real multi-touch (steering while holding Gas), frame rate on a phone GPU, the Low-quality default on a first run (it needs a real coarse pointer), Android fullscreen / orientation lock, the wake lock, iOS Safari quirks and Add to Home Screen. The city, Rapier physics and 10+ MB of models are heavy for older phones; expect to need a recent device.
+- The music and the horn were checked by measuring the rendered audio (levels, clipping, structure), not by listening; how it sounds is untested.
 - Pinch zoom in the character creator is untested. There is no gyroscope steering and no offline mode (no service worker).
 - Dashboard buttons were pressed with a synthesized click while aiming by script; I did not use a real mouse with pointer lock. The driver-job and GPS touch buttons (Jobs, GPS, Big map, View) were not tried on a touch device.
 - There is no ambulance or fire-truck model: emergency jobs use whichever vehicle you drive. Vehicle upgrades are not part of the rewards (points buy repairs and cash only). No GPS voice guidance, and the dashboard has no sound of its own.

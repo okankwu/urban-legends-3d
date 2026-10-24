@@ -1,4 +1,4 @@
-import { CELL, ROAD_W } from '../city/layout'
+import { CELL } from '../city/layout'
 import { RNG } from '../city/roadnet'
 import { GRID } from '../missions/Race'
 import { curbPoint, describePlace, limit } from './roadGraph'
@@ -260,5 +260,3 @@ export function makeOffers(from: Pt, seed: number): JobDef[] {
   return OFFER_TYPES.map((t, i) => buildJob(t, { from, seed }, i))
 }
 
-export const BAY_LAT_OFFSET = BAY_LAT
-export const ROAD_HALF = ROAD_W / 2

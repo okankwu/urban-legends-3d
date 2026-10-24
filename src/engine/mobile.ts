@@ -3,7 +3,6 @@ import { isTouchUi } from './input'
 
 /** Phone / tablet helpers: first-run defaults, fullscreen + landscape lock, wake lock, auto-pause, zoom guards. */
 export const isCoarsePointer = () => typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches
-export const isPhoneSized = () => Math.min(window.innerWidth, window.innerHeight) < 600
 
 const SETTINGS_KEY = 'ul3d.settings.v1'
 

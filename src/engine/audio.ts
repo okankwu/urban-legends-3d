@@ -2,6 +2,8 @@
  * Fully synthesised audio (no sound files): engine, footsteps, ambience, UI sounds, horn and an optional
  * generative music bed. Everything starts only after the first user gesture (browser autoplay rules).
  */
+import { musicTick } from './music'
+
 let ctx: AudioContext | null = null
 let master: GainNode
 let noiseBuf: AudioBuffer
@@ -12,8 +14,6 @@ let engOsc1: OscillatorNode, engOsc2: OscillatorNode, engFilter: BiquadFilterNod
 let cityGain: GainNode, trafficGain: GainNode, cricketGain: GainNode, indoorFilter: BiquadFilterNode, rainGain: GainNode, sirenOsc: OscillatorNode, sirenGain: GainNode
 // music
 let musicGain: GainNode
-let nextNote = 0
-let step = 0
 let wantVolume = 0.6
 
 export type Sfx = 'click' | 'hover' | 'door' | 'talk' | 'buy' | 'horn' | 'hit' | 'toast' | 'deny'
@@ -110,7 +110,6 @@ export function initAudio() {
   musicGain = ctx.createGain()
   musicGain.gain.value = 0
   musicGain.connect(master)
-  nextNote = ctx.currentTime + 0.2
 }
 
 export function setVolume(v: number) {
@@ -183,10 +182,92 @@ export function sfx(name: Sfx) {
       noiseBurst(0.25, 120, 0.6, 0.7)
       tone(90, 0.25, 'sine', 0.3, 0, 40)
       break
-    case 'horn':
-      tone(430, 0.45, 'square', 0.1)
-      tone(540, 0.45, 'square', 0.1)
+    case 'horn': {
+      // one short beep
+      const v = buildHorn(ctx, master, 1)
+      v.stop(ctx.currentTime + 0.42)
       break
+    }
+  }
+}
+
+/**
+ * A car horn: two diaphragm horns a minor third apart (about 415 Hz and 510 Hz). Each is a pair of slightly detuned
+ * sawtooth waves (their beating gives the characteristic buzz), pushed through a soft clipper for the reedy harmonics, then
+ * shaped by two brass-like resonances. Fast attack with a tiny pitch droop, quick release. Works on any audio context, so it
+ * can also be rendered offline for testing.
+ */
+export function buildHorn(c: BaseAudioContext, dest: AudioNode, pitch: number): { stop: (when: number) => void } {
+  const t = c.currentTime
+  const out = c.createGain()
+  out.gain.setValueAtTime(0.0001, t)
+  out.gain.linearRampToValueAtTime(0.34, t + 0.012)
+  out.gain.exponentialRampToValueAtTime(0.24, t + 0.14)
+  const clip = c.createWaveShaper()
+  const curve = new Float32Array(1024)
+  for (let i = 0; i < curve.length; i++) {
+    const x = (i / (curve.length - 1)) * 2 - 1
+    curve[i] = Math.tanh(x * 2.6) * 0.8
+  }
+  clip.curve = curve
+  const r1 = c.createBiquadFilter()
+  r1.type = 'peaking'
+  r1.frequency.value = 980
+  r1.Q.value = 1.6
+  r1.gain.value = 7
+  const r2 = c.createBiquadFilter()
+  r2.type = 'peaking'
+  r2.frequency.value = 2050
+  r2.Q.value = 1.4
+  r2.gain.value = 5
+  const lp = c.createBiquadFilter()
+  lp.type = 'lowpass'
+  lp.frequency.value = 3600
+  const hp = c.createBiquadFilter()
+  hp.type = 'highpass'
+  hp.frequency.value = 160
+  const mix = c.createGain()
+  mix.gain.value = 0.22
+  mix.connect(clip).connect(r1).connect(r2).connect(lp).connect(hp).connect(out).connect(dest)
+  const oscs: OscillatorNode[] = []
+  for (const [f, beat] of [
+    [415, 1.0055],
+    [510, 1.0048],
+  ] as const) {
+    for (const k of [1, beat]) {
+      const o = c.createOscillator()
+      o.type = 'sawtooth'
+      const hz = f * pitch * k
+      o.frequency.setValueAtTime(hz * 1.045, t) // a small droop as the diaphragm gets going
+      o.frequency.exponentialRampToValueAtTime(hz, t + 0.07)
+      o.connect(mix)
+      o.start(t)
+      oscs.push(o)
+    }
+  }
+  let done = false
+  return {
+    stop: (when: number) => {
+      if (done) return
+      done = true
+      const w = Math.max(when, c.currentTime)
+      out.gain.cancelScheduledValues(w)
+      out.gain.setTargetAtTime(0.0001, w, 0.018)
+      for (const o of oscs) o.stop(w + 0.14)
+    },
+  }
+}
+
+/** Pitch of the horn per vehicle: small and light = higher, big and heavy = lower. */
+const HORN_PITCH: Record<string, number> = { sedan: 1, subaru: 1.05, apex: 1.12, suv: 0.88, pickup: 0.8, van: 0.74, bike: 1.4 }
+let hornVoice: { stop: (when: number) => void } | null = null
+/** Holds the horn while the button is down; it sounds for as long as it is held. */
+export function hornHold(on: boolean, vehicle = 'sedan') {
+  if (!ctx) return
+  if (on && !hornVoice) hornVoice = buildHorn(ctx, master, HORN_PITCH[vehicle] ?? 1)
+  else if (!on && hornVoice) {
+    hornVoice.stop(ctx.currentTime)
+    hornVoice = null
   }
 }
 
@@ -211,13 +292,6 @@ export interface AudioFrame {
 let stepTimer = 0
 let birdTimer = 2
 const GEARS = [0, 14, 25, 36, 48, 70]
-const CHORDS = [
-  [57, 60, 64],
-  [53, 57, 60],
-  [48, 52, 55],
-  [55, 59, 62],
-]
-const mtof = (m: number) => 440 * Math.pow(2, (m - 69) / 12)
 
 export function updateAudio(f: AudioFrame) {
   if (!ctx) return
@@ -265,16 +339,8 @@ export function updateAudio(f: AudioFrame) {
   } else stepTimer = 0
 
   // generative music bed (optional)
-  musicGain.gain.setTargetAtTime(f.music && f.playing ? 0.35 : 0, t, 0.8)
-  if (f.music && t > nextNote - 0.05) {
-    const bar = Math.floor(step / 8) % CHORDS.length
-    const chord = CHORDS[bar]
-    const n = step % 8
-    if (n === 0) for (const m of chord) tone(mtof(m - 12), 3.6, 'sine', 0.05, nextNote - t, undefined, musicGain)
-    tone(mtof(chord[n % 3] + 12), 0.5, 'triangle', 0.045, nextNote - t, undefined, musicGain)
-    nextNote += 0.43
-    step++
-  } else if (!f.music) nextNote = Math.max(nextNote, t + 0.2)
+  musicGain.gain.setTargetAtTime(f.music && f.playing ? 0.55 : 0, t, 0.8)
+  musicTick(ctx, musicGain, f.music && f.playing, f.night)
 }
 
 export function honk() {
@@ -287,3 +353,5 @@ export function thunder(delay: number) {
   noiseBurst(2.8, 140, 0.9, 0.4, delay)
   tone(60, 2.2, 'sine', 0.35, delay, 28)
 }
+
+if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__audio = { buildHorn, hornHold }

@@ -156,7 +156,7 @@ export const useGame = create<GameState>((set) => ({
   dialogue: null,
   toast: '',
   volume: 0.6,
-  music: false,
+  music: true,
   mission: null,
   markers: [],
   startMarkers: [],

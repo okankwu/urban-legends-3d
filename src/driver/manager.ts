@@ -6,7 +6,7 @@ import { abandon as pauseStory, saveGame } from '../missions/manager'
 import { CHECKPOINTS, race, raceMarkers, startRace, stopRace, tickRace } from '../missions/Race'
 import type { Marker } from '../missions/types'
 import { gps, resetRouteStats, setNavTarget } from './gps'
-import { ACHIEVEMENTS, CHALLENGES, TYPE_NAME, defaultDriver, levelOf, levelProgress, normalizeDriver, todayKey, withToday } from './rewards'
+import { ACHIEVEMENTS, CHALLENGES, defaultDriver, levelOf, levelProgress, todayKey, withToday } from './rewards'
 import type { DriverData, HistoryEntry } from './rewards'
 import type { BonusLine, JobDef, JobHud, JobResult, Stage } from './types'
 
@@ -467,4 +467,3 @@ function completionText(j: JobDef): string {
   }
 }
 
-export { TYPE_NAME, normalizeDriver }

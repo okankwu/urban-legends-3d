@@ -6,6 +6,7 @@ import { lockPointer } from '../engine/input'
 import { continueGame, newGame, saveGame } from '../missions/manager'
 import { enterFullscreen, fullscreenSupported, isCoarsePointer } from '../engine/mobile'
 import { FullscreenButton } from './MobileExtras'
+import { TRACK, renderTrackWav } from '../engine/music'
 
 function ControlsPanel() {
   const bindings = useGame((s) => s.bindings)
@@ -120,6 +121,34 @@ function AccessPanel() {
   )
 }
 
+/** Renders the soundtrack offline and offers it as a WAV download. */
+function MusicDownload() {
+  const [busy, setBusy] = useState(false)
+  const [prog, setProg] = useState('')
+  return (
+    <button
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true)
+        try {
+          const blob = await renderTrackWav(22050, (d, t) => setProg(`${Math.min(d + 1, t)}/${t}`))
+          const a = document.createElement('a')
+          a.href = URL.createObjectURL(blob)
+          a.download = `${TRACK.title.replace(/ /g, '-')}.wav`
+          document.body.appendChild(a)
+          a.click()
+          a.remove()
+          window.setTimeout(() => URL.revokeObjectURL(a.href), 10000)
+        } finally {
+          setBusy(false)
+        }
+      }}
+    >
+      {busy ? `Rendering the track… ${prog}` : 'Download the soundtrack (WAV)'}
+    </button>
+  )
+}
+
 function SettingsPanel() {
   const s = useGame()
   const upd = (p: Partial<typeof s>) => {
@@ -143,8 +172,9 @@ function SettingsPanel() {
       </label>
       <label className="check">
         <input type="checkbox" checked={s.music} onChange={(e) => upd({ music: e.target.checked })} />
-        Background music (generated)
+        Background music: "Neon Boulevard" (original, generated)
       </label>
+      <MusicDownload />
       <label className="check">
         <input type="checkbox" checked={s.autoQuality} onChange={(e) => upd({ autoQuality: e.target.checked })} />
         Adaptive resolution (lowers render scale when the frame rate drops)
