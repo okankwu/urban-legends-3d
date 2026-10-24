@@ -4,6 +4,8 @@ import { ACTIONS, bindingOf, codeLabel } from '../engine/bindings'
 import type { Quality } from '../store/game'
 import { lockPointer } from '../engine/input'
 import { continueGame, newGame, saveGame } from '../missions/manager'
+import { enterFullscreen, fullscreenSupported, isCoarsePointer } from '../engine/mobile'
+import { FullscreenButton } from './MobileExtras'
 
 function ControlsPanel() {
   const bindings = useGame((s) => s.bindings)
@@ -159,6 +161,11 @@ function SettingsPanel() {
           <option value="high">High</option>
         </select>
       </label>
+      {fullscreenSupported() && (
+        <div className="seg">
+          <FullscreenButton className="" />
+        </div>
+      )}
       <button onClick={() => s.set({ panel: 'none' })}>Back</button>
     </div>
   )
@@ -171,6 +178,7 @@ export default function Menus() {
   const openCreator = () => s.set({ phase: 'creator', panel: 'none', creatorCost: 0, creatorReturn: s.phase === 'paused' ? 'paused' : 'menu' })
   const start = () => {
     // first launch: make the player create a character before entering the city
+    if (isCoarsePointer()) void enterFullscreen()
     if (s.phase === 'menu' && !s.hasSavedCharacter) return openCreator()
     if (s.phase === 'menu' && s.hasProgress) continueGame()
     s.set({ phase: 'playing', panel: 'none' })
@@ -178,6 +186,7 @@ export default function Menus() {
   }
   const fresh = () => {
     newGame()
+    if (isCoarsePointer()) void enterFullscreen()
     if (!s.hasSavedCharacter) return openCreator()
     s.set({ phase: 'playing', panel: 'none' })
     lockPointer()

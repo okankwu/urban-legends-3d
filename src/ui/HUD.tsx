@@ -30,7 +30,7 @@ const HUD_FIELDS = [
 export default function HUD() {
   const s = useGameFields(HUD_FIELDS)
   return (
-    <div className="hud">
+    <div className={'hud' + (s.inVehicle ? ' in-car' : '')}>
       <div className="hud-tl">
         <Minimap />
         <div className="hud-clock">{clock(s.hour)} · {s.appearance.name} · {WEATHER[s.weather]}</div>

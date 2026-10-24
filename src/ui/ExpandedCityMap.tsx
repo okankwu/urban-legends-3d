@@ -4,6 +4,7 @@ import { drawGps } from '../driver/drawMap'
 import { fmtDist, fmtEta, gps } from '../driver/gps'
 import type { Turn } from '../driver/gps'
 import { setExpanded } from '../driver/dashActions'
+import { isTouchUi } from '../engine/input'
 
 const TURN: Record<Turn, string> = { left: '← Turn left', right: 'Turn right →', straight: '↑ Continue', uturn: '↶ U-turn', arrive: '◉ Arrive' }
 
@@ -18,7 +19,22 @@ export default function ExpandedCityMap() {
   const [zoom, setZoom] = useState(1)
   const [, tick] = useState(0)
   const iw = window.innerWidth
-  const size = { w: iw < 760 ? Math.max(240, iw - 64) : Math.min(720, Math.round(iw * 0.56)), h: Math.max(170, Math.min(640, window.innerHeight - 190)) }
+  const touchUi = isTouchUi()
+  const initial = { w: iw < 760 ? Math.max(240, iw - 64) : Math.min(720, Math.round(iw * 0.56)), h: Math.max(170, Math.min(640, window.innerHeight - 190)) }
+  const box = useRef<HTMLDivElement>(null)
+  const [size, setSize] = useState(initial)
+
+  // on touch screens the CSS lays the map out; the canvas follows whatever size it was given
+  useEffect(() => {
+    const el = box.current
+    if (!el || !touchUi) return
+    const ro = new ResizeObserver(() => {
+      const r = el.getBoundingClientRect()
+      if (r.width > 60 && r.height > 60) setSize({ w: Math.round(r.width), h: Math.round(r.height) })
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [touchUi])
 
   useEffect(() => {
     const cv = ref.current!
@@ -65,7 +81,9 @@ export default function ExpandedCityMap() {
           </button>
         </div>
       </header>
-      <canvas ref={ref} style={{ width: size.w, height: size.h }} aria-label="Live city map with route" />
+      <div ref={box} className="gps-canvas-box" style={touchUi ? undefined : { width: initial.w, height: initial.h }}>
+        <canvas ref={ref} style={{ width: '100%', height: '100%' }} aria-label="Live city map with route" />
+      </div>
       <footer>
         {job ? (
           <div className="gps-job">

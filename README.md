@@ -72,6 +72,17 @@ Press **J** (or Pause → Driver Jobs, or the JOBS button on the dashboard) to t
 - **Leaderboard:** local only. The other drivers are fictional characters for comparison, not real players.
 - **GPS:** A* routing over the real road grid (the same one the city and traffic use), turn-by-turn instructions with street names, distance and ETA, re-routing when you leave the route or drive it the wrong way. It is drawn in the dashboard screen of every car-type vehicle (cockpit view, **V**), as a floating overlay in the chase camera, and in an expanded overlay (**N**). The MAP / GPS / EXPAND / JOBS buttons on the dashboard are real 3D objects: look at one with the crosshair (or point with the cursor), it highlights, and a click presses it. The motorcycle has a first-person view but no dashboard screen (use the floating overlay).
 
+## Phones and tablets
+
+The game detects touch screens (or use Accessibility → Touch controls → Always on) and switches to a touch layout:
+
+- **On foot:** joystick (left), drag the right side of the screen to look, Jump / Run / Duck / Use buttons. A yellow "Tap: …" button appears when something can be interacted with (shop door, pickup, pedestrian).
+- **Driving:** the joystick steers (analog, left/right); **Gas** and **Brake** pedals sit under the right thumb, with Handbrake, Horn, Exit, Use, GPS, Big map, View (cockpit/chase) and Garage buttons above them. Top row: Map, Log, Jobs, Fullscreen, Pause. In the cockpit view, drag to look around and tap a dashboard button to press it.
+- **Layout:** built for landscape; in portrait phones show a "turn your phone sideways" notice (dismissible). The HUD, menus, Driver Jobs, creator and expanded GPS are resized for short screens and respect notches / safe areas.
+- **Performance:** a first run on a touch device starts on Low quality with adaptive resolution. The game pauses when the app goes to the background and keeps the screen awake while playing (where the browser supports it).
+- **Full screen:** Start Game requests fullscreen + landscape on Android Chrome and tablets (also a button in the top row and in Settings). iPhone Safari has no fullscreen for web pages: use Share → Add to Home Screen and launch it from the icon to get a full-screen, landscape app.
+- The pinch / double-tap page zoom and the long-press menu are disabled on the game surface.
+
 ## Performance
 
 - Instancing for buildings, trees, streetlights, road markings and traffic lights; the player's Subaru (about 160 meshes and 1M triangles originally) is simplified and merged at load (47 MB source to a 2.9 MB GLB with meshopt + WebP textures).
@@ -115,7 +126,11 @@ Verified in a browser while building (desktop, keyboard): game loads without con
 
 Driver jobs and GPS (tested in the dev browser with scripted input and car teleports): all six job types completed and paid, parking rejects crooked or off-centre cars, timer / wreck / abandon failures pay nothing, a paid job cannot be re-accepted, points and history survive a reload, New Game resets them, the route stays on the road grid (200 random routes checked against the grid), leaving the route triggers a re-plan, dashboard buttons respond to the crosshair ray and a click, Esc closes the expanded GPS without pausing, and the cockpit view works in the Subaru, sedan, SUV, pickup, van, Apex and motorcycle.
 
+Phones and tablets (tested only by emulating screen sizes in a desktop browser with synthetic touch events: 812×375, 390×780, 1024×768): the touch layout, joystick steering, Gas pedal, tap-to-press dashboard buttons, expanded GPS, Driver Jobs menu and character creator fit and work at those sizes.
+
 Not verified / known limits:
+- **No real phone or tablet was used.** Not checked on hardware: real multi-touch (steering while holding Gas), frame rate on a phone GPU, the Low-quality default on a first run (it needs a real coarse pointer), Android fullscreen / orientation lock, the wake lock, iOS Safari quirks and Add to Home Screen. The city, Rapier physics and 10+ MB of models are heavy for older phones; expect to need a recent device.
+- Pinch zoom in the character creator is untested. There is no gyroscope steering and no offline mode (no service worker).
 - Dashboard buttons were pressed with a synthesized click while aiming by script; I did not use a real mouse with pointer lock. The driver-job and GPS touch buttons (Jobs, GPS, Big map, View) were not tried on a touch device.
 - There is no ambulance or fire-truck model: emergency jobs use whichever vehicle you drive. Vehicle upgrades are not part of the rewards (points buy repairs and cash only). No GPS voice guidance, and the dashboard has no sound of its own.
 - The in-car screen was checked at the small size of the preview pane, not on a large monitor.

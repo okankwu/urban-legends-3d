@@ -260,6 +260,8 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
       }
       if (k.Space) brake = Math.max(brake, 1)
       steerTarget = ((k.KeyA || k.ArrowLeft ? 1 : 0) - (k.KeyD || k.ArrowRight ? 1 : 0)) * spec.steer
+      // touch joystick: analog steering with a small dead zone and a gentle curve
+      if (rt.stick.active && Math.abs(rt.stick.x) > 0.1) steerTarget = -Math.sign(rt.stick.x) * Math.min(1, Math.abs(rt.stick.x) ** 1.25 * 1.1) * spec.steer
     } else {
       brake = st.inVehicle ? 0.5 : 0.35
     }

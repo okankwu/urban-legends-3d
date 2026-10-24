@@ -7,7 +7,7 @@
 .crosshair.on i { width: 16px; height: 16px; left: -8px; top: -8px; background: transparent; border: 2px solid #3da5ff; box-shadow: 0 0 10px #3da5ff; }
 .crosshair span { position: absolute; left: 14px; top: -26px; background: var(--panel); border: 1px solid #3da5ff; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; letter-spacing: 1px; white-space: nowrap; }
 .gps-float { position: absolute; right: 18px; top: 128px; border-radius: 12px; border: 3px solid #1a2233; box-shadow: 0 6px 24px rgba(0,0,0,.5); background: #0d1626; }
-.gps-expanded { position: absolute; right: 18px; top: 18px; max-height: calc(100vh - 36px); overflow: auto; background: rgba(8,12,22,.96); border: 1px solid #2b3a58; border-radius: 14px; padding: 12px; display: grid; gap: 10px; pointer-events: auto; zoom: var(--ui, 1); z-index: 5; }
+.gps-expanded { position: absolute; right: 18px; top: 18px; max-height: calc(100vh - 36px); overflow: auto; background: rgba(8,12,22,.96); border: 1px solid #2b3a58; border-radius: 14px; padding: 12px; display: grid; gap: 10px; pointer-events: auto; zoom: var(--ui, 1); z-index: 20; }
 .gps-expanded header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .gps-expanded header b { letter-spacing: 3px; font-size: 12px; color: #3da5ff; }
 .gps-expanded header .seg { display: flex; gap: 6px; }
@@ -113,3 +113,5 @@ html[data-motion='reduce'] .dj-lines li, html[data-motion='reduce'] .dj-bar > di
 }
 .dj-complete, .dj-panel, .gps-expanded { box-sizing: border-box; max-width: 100%; }
 .overlay { overflow-x: hidden; }
+.gps-canvas-box { position: relative; }
+.gps-canvas-box canvas { border-radius: 10px; display: block; }

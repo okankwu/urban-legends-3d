@@ -37,6 +37,8 @@ import DriverJobsMenu from './ui/DriverJobsMenu'
 import { useGame } from './store/game'
 import Creator from './characters/Creator'
 import CreatorStage from './characters/CreatorStage'
+import { initMobile } from './engine/mobile'
+import { RotateHint } from './ui/MobileExtras'
 import { buildCustomRig, loadCustomFile, setCustomRig } from './characters/customRig'
 
 export default function App() {
@@ -72,6 +74,7 @@ function Game() {
 
   useEffect(() => {
     installInput(() => document.querySelector('canvas'))
+    initMobile()
     // restore a previously uploaded character
     const st = useGame.getState()
     if (st.appearance.base === 'custom') {
@@ -130,6 +133,7 @@ function Game() {
       {phase === 'map' && <MapScreen />}
       {phase === 'journal' && <Journal />}
       <TouchControls />
+      <RotateHint />
       <GarageUI />
       <ShopUI />
       <Menus />

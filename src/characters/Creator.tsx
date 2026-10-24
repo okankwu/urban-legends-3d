@@ -65,27 +65,52 @@ export default function Creator() {
     backup.current = useGame.getState().appearance
     rt.creatorYaw = 0.4
     rt.creatorZoom = 3.4
+    // touch: one finger turns the character, two fingers pinch to zoom
+    const touches = new Map<number, { x: number; y: number }>()
+    let pinch = 0
     const down = (e: PointerEvent) => {
       if ((e.target as HTMLElement).closest('.creator-panel, .creator-bar')) return
+      if (e.pointerType === 'touch') {
+        touches.set(e.pointerId, { x: e.clientX, y: e.clientY })
+        if (touches.size === 2) {
+          const [p, q] = [...touches.values()]
+          pinch = Math.hypot(p.x - q.x, p.y - q.y)
+        }
+      }
       dragging.current = e.clientX
     }
     const move = (e: PointerEvent) => {
+      if (touches.has(e.pointerId)) {
+        touches.set(e.pointerId, { x: e.clientX, y: e.clientY })
+        if (touches.size === 2) {
+          const [p, q] = [...touches.values()]
+          const d = Math.hypot(p.x - q.x, p.y - q.y)
+          rt.creatorZoom = Math.max(1.6, Math.min(6, rt.creatorZoom - (d - pinch) * 0.01))
+          pinch = d
+          return
+        }
+      }
       if (dragging.current == null) return
       rt.creatorYaw += (e.clientX - dragging.current) * 0.01
       dragging.current = e.clientX
     }
-    const up = () => (dragging.current = null)
+    const up = (e: PointerEvent) => {
+      touches.delete(e.pointerId)
+      dragging.current = null
+    }
     const wheel = (e: WheelEvent) => {
       rt.creatorZoom = Math.max(1.6, Math.min(6, rt.creatorZoom + e.deltaY * 0.002))
     }
     window.addEventListener('pointerdown', down)
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
     window.addEventListener('wheel', wheel, { passive: true })
     return () => {
       window.removeEventListener('pointerdown', down)
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
       window.removeEventListener('wheel', wheel)
     }
   }, [])
@@ -284,7 +309,7 @@ export default function Creator() {
             <button key={label} onClick={() => (rt.creatorYaw = y)}>{label}</button>
           ))}
         </div>
-        <span className="hint">Drag to rotate · scroll to zoom{s.creatorCost > 0 ? ` · New look costs ${s.creatorCost} (you have ${s.money})` : ''}</span>
+        <span className="hint">Drag to rotate · scroll or pinch to zoom{s.creatorCost > 0 ? ` · New look costs ${s.creatorCost} (you have ${s.money})` : ''}</span>
         <div className="seg">
           <button onClick={() => close(false)}>Cancel</button>
           <button className="primary" onClick={() => close(true)} disabled={!a.name.trim()}>Save &amp; Play</button>

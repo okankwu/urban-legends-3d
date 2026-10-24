@@ -44,7 +44,9 @@ export default function Dashboard({ prep }: { prep: Prepared }) {
   const cp = prep.cockpit
   const root = useRef<THREE.Group>(null)
   const wheel = useRef<THREE.Group>(null)
-  const { camera, pointer } = useThree()
+  const { camera } = useThree()
+  // where the real mouse cursor is (only a mouse counts; touches are handled as taps, and R3F's own pointer also follows fingers)
+  const mouseNdc = useRef<{ x: number; y: number } | null>(null)
 
   const screen = useMemo(() => {
     const canvas = document.createElement('canvas')
@@ -70,8 +72,63 @@ export default function Dashboard({ prep }: { prep: Prepared }) {
   const btnGroups = useRef<THREE.Group[]>([])
   const hover = useRef(-1)
   const pressedAt = useRef<number[]>(BUTTONS.map(() => -10))
-  const raycaster = useMemo(() => new THREE.Raycaster(), [])
-  const centre = useMemo(() => new THREE.Vector2(0, 0), [])
+  // Button picking is done in the vehicle's own frame (eye + head angles -> ray, buttons -> local boxes). The camera and the
+  // chassis are updated in different callbacks of the same frame, so a world-space raycast would be a frame stale and miss
+  // the tiny buttons whenever the car is moving.
+  const pickTmp = useMemo(
+    () => ({ dir: new THREE.Vector3(), org: new THREE.Vector3(), o: new THREE.Vector3(), d: new THREE.Vector3(), q: new THREE.Quaternion(), e: new THREE.Euler(0, 0, 0, 'YXZ'), m: new THREE.Matrix4(), inv: new THREE.Matrix4() }),
+    [],
+  )
+  /** index of the dashboard button under the screen point (ndcX, ndcY), or -1 */
+  const pick = (ndcX: number, ndcY: number): number => {
+    const g3 = root.current
+    if (!g3 || !cp) return -1
+    const t = pickTmp
+    const cam = camera as THREE.PerspectiveCamera
+    const th = Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2)
+    t.dir.set(ndcX * th * cam.aspect, ndcY * th, -1).normalize()
+    t.e.set(rt.headPitch, Math.PI + rt.headYaw, 0)
+    t.q.setFromEuler(t.e)
+    t.dir.applyQuaternion(t.q)
+    t.org.set(cp.eye[0], cp.eye[1], cp.eye[2])
+    let best = -1
+    let bestT = 2.6
+    btnMeshes.current.forEach((mesh, i) => {
+      if (!mesh) return
+      // matrix of the button relative to the dash root (= chassis space)
+      t.m.identity()
+      for (let o: THREE.Object3D | null = mesh; o && o !== g3; o = o.parent) {
+        o.updateMatrix()
+        t.m.premultiply(o.matrix)
+      }
+      t.inv.copy(t.m).invert()
+      t.o.copy(t.org).applyMatrix4(t.inv)
+      t.d.copy(t.dir).transformDirection(t.inv)
+      // ray / box slab test against the button's 0.074 x 0.036 x 0.014 body
+      const half = [0.037, 0.018, 0.007]
+      const oo = [t.o.x, t.o.y, t.o.z]
+      const dd = [t.d.x, t.d.y, t.d.z]
+      let t0 = 0
+      let t1 = bestT
+      for (let a = 0; a < 3; a++) {
+        if (Math.abs(dd[a]) < 1e-9) {
+          if (Math.abs(oo[a]) > half[a]) return
+        } else {
+          let ta = (-half[a] - oo[a]) / dd[a]
+          let tb = (half[a] - oo[a]) / dd[a]
+          if (ta > tb) [ta, tb] = [tb, ta]
+          t0 = Math.max(t0, ta)
+          t1 = Math.min(t1, tb)
+          if (t0 > t1) return
+        }
+      }
+      if (t0 < bestT) {
+        bestT = t0
+        best = i
+      }
+    })
+    return best
+  }
   const nextDraw = useRef(0)
   const nextSpeedo = useRef(0)
   const lastDrawn = useRef('')
@@ -86,6 +143,53 @@ export default function Dashboard({ prep }: { prep: Prepared }) {
     },
     [screen, speedo, labels, mats, labelMats],
   )
+
+  // touch: tapping a dashboard button in the cockpit view presses it (the canvas sits under the touch layer, so the
+  // tap position is read from the window and turned into a ray)
+  useEffect(() => {
+    // only a quick tap with little movement counts; a drag that starts on the dash is a look gesture
+    const downs = new Map<number, { x: number; y: number; t: number }>()
+    const onDownT = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') downs.set(e.pointerId, { x: e.clientX, y: e.clientY, t: performance.now() })
+    }
+    const onCancel = (e: PointerEvent) => downs.delete(e.pointerId)
+    const onTap = (e: PointerEvent) => {
+      const d0 = downs.get(e.pointerId)
+      downs.delete(e.pointerId)
+      if (e.pointerType !== 'touch' || !d0) return
+      if (performance.now() - d0.t > 450 || Math.hypot(e.clientX - d0.x, e.clientY - d0.y) > 14) return
+      const s = useGame.getState()
+      if (s.phase !== 'playing' || s.camMode !== 'cockpit' || !s.inVehicle || !root.current?.visible) return
+      const cv = document.querySelector('canvas')
+      if (!cv) return
+      const r = cv.getBoundingClientRect()
+      const i = pick(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1)
+      if (i < 0) return
+      pressedAt.current[i] = performance.now()
+      pressDash(BUTTONS[i].id)
+    }
+    window.addEventListener('pointerdown', onDownT)
+    window.addEventListener('pointerup', onTap)
+    window.addEventListener('pointercancel', onCancel)
+    return () => {
+      window.removeEventListener('pointerdown', onDownT)
+      window.removeEventListener('pointerup', onTap)
+      window.removeEventListener('pointercancel', onCancel)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [camera])
+
+  useEffect(() => {
+    const move = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse' || document.pointerLockElement) return
+      const cv = document.querySelector('canvas')
+      if (!cv) return
+      const r = cv.getBoundingClientRect()
+      mouseNdc.current = { x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1 }
+    }
+    window.addEventListener('pointermove', move)
+    return () => window.removeEventListener('pointermove', move)
+  }, [])
 
   // click: the hovered 3D button is activated by the mouse
   useEffect(() => {
@@ -119,11 +223,7 @@ export default function Dashboard({ prep }: { prep: Prepared }) {
 
     // pick a button with the crosshair (pointer locked) or the mouse cursor
     const locked = !!document.pointerLockElement
-    raycaster.setFromCamera(locked ? centre : pointer, camera)
-    raycaster.far = 2.4
-    g3.updateWorldMatrix(true, true)
-    const hits = raycaster.intersectObjects(btnMeshes.current, false)
-    const idx = hits.length ? btnMeshes.current.indexOf(hits[0].object as THREE.Mesh) : -1
+    const idx = locked ? pick(0, 0) : mouseNdc.current ? pick(mouseNdc.current.x, mouseNdc.current.y) : -1
     if (idx !== hover.current) {
       hover.current = idx
       s.set({ dashHover: idx >= 0 ? BUTTONS[idx].label : '' })

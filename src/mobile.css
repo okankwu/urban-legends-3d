@@ -1,0 +1,99 @@
+/* ---------- Phones and tablets ---------- */
+html, body, #root { height: calc(var(--vh, 1vh) * 100); overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+html[data-touch='yes'] body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+html[data-touch='yes'] { --tb: clamp(48px, 12.5vmin, 70px); --stick: clamp(104px, 30vmin, 150px); --sl: max(18px, env(safe-area-inset-left)); --sr: max(18px, env(safe-area-inset-right)); --sb: max(16px, env(safe-area-inset-bottom)); --st: max(8px, env(safe-area-inset-top)); }
+
+/* touch layer */
+html[data-touch='yes'] .touch-look { width: 60%; height: 100%; }
+html[data-touch='yes'] .touch-stick { left: var(--sl); bottom: var(--sb); width: var(--stick); height: var(--stick); touch-action: none; }
+html[data-touch='yes'] .touch-knob { left: 50%; top: 50%; width: 42%; height: 42%; margin: -21% 0 0 -21%; }
+html[data-touch='yes'] .touch-top { right: var(--sr); top: calc(var(--st) + 44px); gap: 6px; }
+html[data-touch='yes'] .touch-actions { right: var(--sr); bottom: var(--sb); grid-template-columns: repeat(2, var(--tb)); gap: 8px; }
+html[data-touch='yes'] .tbtn { width: var(--tb); height: var(--tb); font-size: clamp(10px, 2.6vmin, 13px); line-height: 1.1; padding: 2px; font-weight: 700; }
+html[data-touch='yes'] .tbtn.small { width: calc(var(--tb) * .8); height: calc(var(--tb) * .8); font-size: clamp(9px, 2.2vmin, 11px); }
+html[data-touch='yes'] .touch-top .tbtn.small { width: 44px; height: 44px; }
+.touch-pedals { position: absolute; right: var(--sr, 18px); bottom: var(--sb, 16px); display: flex; align-items: flex-end; gap: 14px; }
+.tbtn.pedal { border-radius: 20px; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; }
+.tbtn.pedal.gas { width: calc(var(--tb, 64px) * 1.5); height: calc(var(--tb, 64px) * 1.8); background: rgba(52, 190, 112, .82); color: #06150c; border-color: rgba(255,255,255,.5); }
+.tbtn.pedal.brake { width: calc(var(--tb, 64px) * 1.25); height: calc(var(--tb, 64px) * 1.3); background: rgba(225, 78, 78, .82); border-color: rgba(255,255,255,.5); }
+.tbtn.pedal:active { filter: brightness(1.3); transform: scale(.96); }
+.touch-misc { position: absolute; right: var(--sr, 18px); bottom: calc(var(--sb, 16px) + var(--tb, 64px) * 1.8 + 12px); display: grid; grid-template-columns: repeat(4, calc(var(--tb, 64px) * .8)); gap: 7px; justify-content: end; }
+.touch-prompt { position: absolute; left: 50%; bottom: calc(var(--sb, 16px) - 4px); transform: translateX(-50%); padding: 10px 18px; border-radius: 999px; background: rgba(255, 210, 74, .94); color: #151515; font-weight: 800; font-size: 14px; border: 0; max-width: 46vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* HUD on touch screens */
+html[data-touch='yes'] .prompt, html[data-touch='yes'] .prompt.small { display: none; }
+html[data-touch='yes'] .hud-tl { left: var(--sl); top: var(--st); }
+html[data-touch='yes'] .minimap { width: clamp(96px, 26vmin, 160px) !important; height: clamp(96px, 26vmin, 160px) !important; }
+html[data-touch='yes'] .hud-clock { margin: 2px 0 0 4px; font-size: 11px; }
+html[data-touch='yes'] .hud-tr { right: var(--sr); top: var(--st); }
+html[data-touch='yes'] .money { font-size: clamp(16px, 4.4vmin, 26px); }
+html[data-touch='yes'] .star { font-size: clamp(13px, 3.4vmin, 20px); }
+html[data-touch='yes'] .hud-objective { top: var(--st); left: calc(var(--sl) + clamp(104px, 28vmin, 168px)); transform: none; max-width: calc(100vw - var(--sl) - var(--sr) - clamp(104px, 28vmin, 168px) - 150px); font-size: 12px; padding: 5px 10px; gap: 8px; }
+html[data-touch='yes'] .hud-objective .timer { font-size: 16px; margin-left: 4px; }
+html[data-touch='yes'] .hud-bl { left: var(--sl); bottom: calc(var(--sb) + var(--stick) + 10px); width: clamp(110px, 26vw, 170px); gap: 4px; }
+html[data-touch='yes'] .bar { height: 12px; }
+html[data-touch='yes'] .bar span { line-height: 12px; font-size: 8px; left: 6px; }
+html[data-touch='yes'] .hud-br { left: 50%; right: auto; transform: translateX(-50%); bottom: calc(var(--sb) + 52px); width: 170px; text-align: center; }
+html[data-touch='yes'] .speed { font-size: clamp(28px, 8vmin, 46px); }
+html[data-touch='yes'] .dialogue { bottom: calc(var(--sb) + 60px); width: min(420px, 56vw); font-size: 13px; padding: 8px 12px; }
+html[data-touch='yes'] .toast { top: calc(var(--st) + 50px); font-size: 13px; padding: 5px 12px; }
+html[data-touch='yes'] .carrying { top: calc(var(--st) + 46px); font-size: 11px; }
+html[data-touch='yes'] .banner { top: 16%; min-width: 0; padding: 8px 18px; }
+html[data-touch='yes'] .banner strong { font-size: clamp(16px, 4.6vmin, 26px); letter-spacing: 2px; }
+html[data-touch='yes'] .race-hud { right: var(--sr); top: calc(var(--st) + 100px); font-size: 34px; }
+html[data-touch='yes'] .countdown { font-size: clamp(60px, 18vmin, 110px); }
+html[data-touch='yes'] .caption { bottom: calc(var(--sb) + 70px); font-size: 13px; }
+html[data-touch='yes'] .gps-float { left: var(--sl); right: auto; top: calc(var(--st) + 128px); width: clamp(140px, 22vw, 200px) !important; height: auto !important; aspect-ratio: 3 / 2; }
+html[data-touch='yes'] .hud.in-car .hud-bl { display: none; }
+html[data-touch='yes'] .gps-expanded { left: 8px; right: 8px; top: calc(var(--st) + 8px); max-height: calc(var(--vh, 1vh) * 100 - 16px - var(--st)); zoom: 1; padding: 8px; gap: 6px; }
+html[data-touch='yes'] .gps-expanded header { flex-wrap: wrap; }
+html[data-touch='yes'] .gps-canvas-box { width: 100%; aspect-ratio: 12 / 8; max-height: 46vh; }
+html[data-touch='yes'] .touch.gps-open .touch-top { display: none; }
+@media (orientation: landscape) and (max-height: 560px) {
+  html[data-touch='yes'] .gps-expanded { left: calc(var(--sl) + var(--stick) + 14px); right: calc(var(--sr) + var(--tb) * 3.3 + 30px); top: 8px; max-height: calc(var(--vh, 1vh) * 100 - 16px); }
+  html[data-touch='yes'] .gps-canvas-box { aspect-ratio: 16 / 8; max-height: 44vh; }
+  html[data-touch='yes'] .gps-turns { display: none; }
+}
+html[data-touch='yes'] .gps-turns li { grid-template-columns: 96px 1fr auto; font-size: 12px; }
+html[data-touch='yes'] .crosshair { display: none; }
+
+/* menus and panels on short screens (phones in landscape) */
+@media (max-height: 560px) {
+  .menu h1 { font-size: 26px; margin: 0; }
+  .sub { margin: 2px 0 8px; font-size: 10px; letter-spacing: 2px; }
+  .menu-card { width: min(560px, 94vw); padding: 8px 0; }
+  .buttons { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .buttons .primary { grid-column: 1 / -1; }
+  .panel { padding: 12px; gap: 6px; max-height: calc(var(--vh, 1vh) * 100 - 70px); overflow: auto; }
+  .overlay { padding: 8px; }
+  .dj-panel { max-height: calc(var(--vh, 1vh) * 100 - 16px); }
+  .dj-head { padding: 8px 12px; gap: 8px; }
+  .dj-head h2 { font-size: 18px; }
+  .dj-body { padding: 10px 12px 12px; }
+  .dj-grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+  .dj-complete { padding: 14px; gap: 7px; max-height: calc(var(--vh, 1vh) * 100 - 16px); overflow: auto; }
+  .dj-complete h2 { font-size: 20px; }
+  .map-wrap { gap: 10px; }
+}
+html[data-touch='yes'] button { min-height: 40px; }
+html[data-touch='yes'] .tbtn { min-height: 0; }
+html[data-touch='yes'] .minimap-wrap, html[data-touch='yes'] .hud { touch-action: none; }
+
+/* portrait phones: stack things instead of side by side */
+@media (max-width: 700px) and (orientation: portrait) {
+  .buttons { grid-template-columns: 1fr; }
+  .map-wrap { flex-direction: column; align-items: center; }
+  .dj-grid { grid-template-columns: 1fr; }
+  .dj-head { flex-direction: column; align-items: stretch; }
+}
+
+/* rotate hint */
+.rotate-hint { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: rgba(5, 8, 16, .94); padding: 24px; }
+.rotate-card { max-width: 340px; text-align: center; display: grid; gap: 12px; }
+.rotate-card h2 { margin: 0; }
+.rotate-card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.rotate-icon { font-size: 64px; color: var(--accent); animation: rotateTilt 2.4s ease-in-out infinite; }
+@keyframes rotateTilt { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-90deg); } }
+html[data-motion='reduce'] .rotate-icon { animation: none; }
+/* the expanded GPS sits inside the HUD layer, which is below the touch layer: free the area the drag-to-look pad covers */
+html[data-touch='yes'] .touch.gps-open .touch-look { display: none; }

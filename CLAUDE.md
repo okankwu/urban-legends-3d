@@ -49,6 +49,8 @@ Vite + React + TypeScript; R3F (`@react-three/fiber`/`drei`) renders, `@react-th
 - `window.__driver` (dev only) exposes the planner, `buildJob`, `acceptJob` and `drawGps`. `__step` runs with a small effective dt, so a timed stage (e.g. a 4 s hold) needs a few hundred steps.
 - Missions 3–5 were tested by teleporting the car (`teleportCar` in `missions/actions.ts`), not by hand-driving.
 
+**Touch / mobile** (`ui/TouchControls.tsx`, `engine/mobile.ts`, `mobile.css`, `ui/MobileExtras.tsx`): `isTouchUi()` (setting + `pointer: coarse`) decides the layout; `initMobile()` mirrors it on `<html data-touch>` so CSS can restyle the HUD. Touch buttons write into the same `rt.keys` / `rt.pressed` table as the keyboard; the joystick feeds `rt.stick` (analog steering in `Car.tsx`, movement in `Player.tsx`). Anything that is a key handler in `input.ts` (G, N, V, J) has no touch equivalent through `rt.pressed`, so touch buttons call the same functions directly (`driver/dashActions.ts`). `public/manifest.webmanifest` + icons make Add-to-Home-Screen fullscreen.
+
 ## Known limits (from README)
 
 Audio has never been listened to; touch controls and the final "test everything" pass (shops, garage, mission chain, upload validation, touch Jump) are not fully verified on a real device; weather and wanted level are not saved; the `subaru.glb` and Meshy models are third-party assets whose licences should be checked since the repo is public.
