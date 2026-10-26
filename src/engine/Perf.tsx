@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useFrame, useStore, useThree } from '@react-three/fiber'
 import { rt } from './runtime'
 import { useGame } from '../store/game'
 
-const BASE_DPR = { low: 0.75, medium: 1.25, high: 1.75 } as const
+const BASE_DPR = { low: 0.75, medium: 1, high: 1.5 } as const
 
 /** Inside the Canvas: records frame stats and (optionally) adapts the render resolution to hold the frame rate. */
 export function PerfProbe() {
@@ -38,11 +38,12 @@ export function PerfProbe() {
       // dynamic resolution: step the pixel ratio down when slow, back up when comfortable
       if (st.autoQuality && st.phase === 'playing') {
         a.lastAdapt += 1
-        if (a.lastAdapt >= 3) {
+        if (a.lastAdapt >= 2) {
           a.lastAdapt = 0
           let next = a.scale
-          if (fps < 26 && a.scale > 0.55) next = Math.max(0.55, a.scale - 0.15)
-          else if (fps > 54 && a.scale < 1) next = Math.min(1, a.scale + 0.1)
+          // react as soon as 60 fps cannot be held (a display locked to 60 Hz drops straight to 30), and creep back up slowly
+          if (fps < 50 && a.scale > 0.55) next = Math.max(0.55, a.scale - (fps < 35 ? 0.15 : 0.08))
+          else if (fps > 57 && a.scale < 1) next = Math.min(1, a.scale + 0.05)
           if (next !== a.scale) {
             a.scale = next
             setDpr(Math.min(window.devicePixelRatio || 1, BASE_DPR[st.quality]) * next)
@@ -73,8 +74,10 @@ export function FpsMeter() {
 /** Dev only: window.__step(frames, dt) advances the simulation without needing a visible tab (used for automated testing). */
 export function DevStepper() {
   const advance = useThree((s) => s.advance)
+  const store = useStore()
   useEffect(() => {
     if (!import.meta.env.DEV) return
+    ;(window as unknown as Record<string, unknown>).__r3f = store // dev: lets a script time every useFrame callback
     let t = performance.now()
     ;(window as unknown as Record<string, unknown>).__step = (n = 60, dt = 1 / 60) => {
       for (let i = 0; i < n; i++) {
@@ -82,6 +85,6 @@ export function DevStepper() {
         advance(t)
       }
     }
-  }, [advance])
+  }, [advance, store])
   return null
 }

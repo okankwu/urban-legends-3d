@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useGame } from '../store/game'
@@ -6,6 +6,10 @@ import { nightFactor } from './City'
 import { lamps } from './layout'
 import { rt } from '../engine/runtime'
 import { RNG } from './roadnet'
+
+const CLOUD_GREY = new THREE.Color('#5d6470')
+const CLOUD_NIGHT = new THREE.Color('#1d2233')
+const LAMP_LIGHTS = 4
 
 /** Stars, moon, drifting clouds and a pool of point lights that follow the player at night. */
 export default function SkyDetails() {
@@ -15,6 +19,8 @@ export default function SkyDetails() {
   const lampLights = useRef<(THREE.PointLight | null)[]>([])
   const { camera } = useThree()
   const acc = useRef(0)
+  const lampsOn = useRef(false)
+  const cloudMesh = useRef<THREE.InstancedMesh>(null)
 
   const starGeo = useMemo(() => {
     const r = RNG(99)
@@ -41,6 +47,21 @@ export default function SkyDetails() {
       puffs: Array.from({ length: 5 }, () => ({ x: (r() - 0.5) * 70, y: (r() - 0.5) * 8, z: (r() - 0.5) * 40, s: 22 + r() * 24 })),
     }))
   }, [])
+  const cloudCount = useMemo(() => cloudData.reduce((a, c) => a + c.puffs.length, 0), [cloudData])
+  useEffect(() => {
+    const mesh = cloudMesh.current
+    if (!mesh) return
+    const m = new THREE.Matrix4()
+    const q = new THREE.Quaternion()
+    let k = 0
+    for (const c of cloudData)
+      for (const p of c.puffs) {
+        // a puff sits inside its cloud (scaled by the cloud's size) and is itself squashed into a flat ellipsoid
+        m.compose(new THREE.Vector3(c.x + p.x * c.s, c.y + p.y * c.s, c.z + p.z * c.s), q, new THREE.Vector3(p.s * c.s, p.s * 0.35 * c.s, p.s * 0.7 * c.s))
+        mesh.setMatrixAt(k++, m)
+      }
+    mesh.instanceMatrix.needsUpdate = true
+  }, [cloudData])
   const cloudMat = useMemo(() => new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.85, fog: false, depthWrite: false }), [])
 
   useFrame((_, dt) => {
@@ -58,7 +79,7 @@ export default function SkyDetails() {
     // clouds drift and darken at night
     if (st.phase === 'playing') clouds.current.position.x += dt * 4
     if (clouds.current.position.x > 700) clouds.current.position.x = -700
-    cloudMat.color.set('#ffffff').lerp(new THREE.Color('#5d6470'), rt.gray).lerp(new THREE.Color('#1d2233'), n)
+    cloudMat.color.set('#ffffff').lerp(CLOUD_GREY, rt.gray).lerp(CLOUD_NIGHT, n)
     cloudMat.opacity = Math.min(0.97, 0.85 - n * 0.35 + rt.gray * 0.2)
 
     // streetlight glow: nearest lamps get real lights at night
@@ -72,7 +93,14 @@ export default function SkyDetails() {
         .slice(0, lampLights.current.length)
       near.forEach((q, i) => lampLights.current[i]?.position.set(q.l.x, 6.6, q.l.z))
     }
-    for (const L of lampLights.current) if (L) L.intensity = n * 55
+    // A light that is switched off by intensity still costs every lit pixel (the shader loops over all lights), so by day
+    // the lamp pool is taken out of the scene altogether. Hysteresis stops it flickering around dusk.
+    lampsOn.current = lampsOn.current ? n > 0.07 : n > 0.16
+    for (const L of lampLights.current) {
+      if (!L) continue
+      L.visible = lampsOn.current
+      L.intensity = n * 55
+    }
 
   })
 
@@ -86,19 +114,15 @@ export default function SkyDetails() {
         <meshBasicMaterial color="#e9eefc" transparent fog={false} />
       </mesh>
       <group ref={clouds}>
-        {cloudData.map((c, i) => (
-          <group key={i} position={[c.x, c.y, c.z]} scale={c.s}>
-            {c.puffs.map((p, j) => (
-              <mesh key={j} position={[p.x, p.y, p.z]} scale={[p.s, p.s * 0.35, p.s * 0.7]} material={cloudMat}>
-                <sphereGeometry args={[1, 10, 8]} />
-              </mesh>
-            ))}
-          </group>
-        ))}
+        {/* all cloud puffs are one instanced mesh: a single draw call instead of eighty */}
+        <instancedMesh ref={cloudMesh} args={[undefined, cloudMat, cloudCount]} frustumCulled={false}>
+          <sphereGeometry args={[1, 10, 8]} />
+        </instancedMesh>
       </group>
-      {Array.from({ length: 6 }, (_, i) => (
+      {Array.from({ length: LAMP_LIGHTS }, (_, i) => (
         <pointLight
           key={i}
+          visible={false}
           ref={(l) => {
             lampLights.current[i] = l
           }}

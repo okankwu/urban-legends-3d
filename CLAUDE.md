@@ -46,6 +46,7 @@ Vite + React + TypeScript; R3F (`@react-three/fiber`/`drei`) renders, `@react-th
 
 - In dev builds only (`import.meta.env.DEV`), the globals `__game` (store), `__rt`, `__cars`, `__peds`, `__step`, `__sim` are exposed for scripted checks via the browser tool.
 - A hidden/background browser tab throttles `requestAnimationFrame` to ~1 fps; use `__step`/`DevStepper` (`src/engine/Perf.tsx`) to advance the simulation instead of waiting in real time.
+- Performance work: `window.__r3f` (dev only, the R3F store) lets a script wrap every `useFrame` callback in a timer (`__r3f.getState().internal.subscribers`). Lights that are only switched off by intensity still cost every lit pixel, so street-lamp point lights are `visible` only at night and the headlight spots only while the headlights are on; keep the dynamic light count low. Clouds are one instanced mesh; far traffic cars and pedestrians drop small parts (LOD in `Traffic.tsx` / `Peds.tsx`).
 - `window.__driver` (dev only) exposes the planner, `buildJob`, `acceptJob` and `drawGps`. `__step` runs with a small effective dt, so a timed stage (e.g. a 4 s hold) needs a few hundred steps.
 - Missions 3–5 were tested by teleporting the car (`teleportCar` in `missions/actions.ts`), not by hand-driving.
 

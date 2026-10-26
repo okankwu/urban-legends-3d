@@ -20,8 +20,11 @@ export default function Minimap() {
     const g = cv.getContext('2d')!
     g.scale(dpr, dpr)
     let raf = 0
-    const draw = () => {
+    let last = 0
+    const draw = (now = 0) => {
       raf = requestAnimationFrame(draw)
+      if (now - last < 30) return // ~30 fps is plenty for a small map
+      last = now
       const st = useGame.getState()
       const inCar = st.inVehicle
       const px = inCar ? rt.vehiclePos.x : rt.playerPos.x

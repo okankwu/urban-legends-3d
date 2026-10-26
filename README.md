@@ -89,6 +89,7 @@ The game detects touch screens (or use Accessibility → Touch controls → Alwa
 
 ## Performance
 
+- Lighting: the street-lamp and headlight lights are removed from the lighting pass by day / with the headlights off (a light with zero intensity still costs every pixel). Clouds are a single instanced mesh; distant traffic and pedestrians draw fewer parts. Medium renders at pixel ratio 1.0 (High 1.5, Low 0.75), and adaptive resolution now steps down as soon as the game cannot hold about 60 fps.
 - Instancing for buildings, trees, streetlights, road markings and traffic lights; the player's Subaru (about 160 meshes and 1M triangles originally) is simplified and merged at load (47 MB source to a 2.9 MB GLB with meshopt + WebP textures).
 - Pre-allocated pools for traffic cars, police and pedestrians; counts scale with quality (cars 12/24/36, pedestrians 18/32/48) and far ones are hidden by distance.
 - Low / Medium / High presets (resolution, shadows, view distance, entity counts) and **adaptive resolution** that lowers the render scale when FPS drops. *Settings → Show FPS* shows fps, draw calls and triangles.

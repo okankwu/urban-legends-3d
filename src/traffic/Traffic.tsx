@@ -211,7 +211,17 @@ export default function Traffic() {
       if (Math.abs(c.x) > roadMax() * CELL + 14 || Math.abs(c.z) > roadMax() * CELL + 14) Object.assign(c, spawn())
       c.act = active
       const g = groups.current[i]
-      if (g) g.visible = active && Math.abs(c.x - px) < CAR_VIS[quality] && Math.abs(c.z - pz) < CAR_VIS[quality]
+      if (g) {
+        g.visible = active && Math.abs(c.x - px) < CAR_VIS[quality] && Math.abs(c.z - pz) < CAR_VIS[quality]
+        if (g.visible) {
+          // level of detail: beyond ~60 m only the body and cabin are drawn (children 0 and 1)
+          const near = (c.x - px) ** 2 + (c.z - pz) ** 2 < 60 * 60
+          if (g.userData.near !== near) {
+            g.userData.near = near
+            for (let k = 2; k < Math.min(10, g.children.length); k++) g.children[k].visible = near // wheels and lamps (a police light bar stays visible)
+          }
+        }
+      }
       if (!active) {
         bodies.current[i]?.setNextKinematicTranslation({ x: 0, y: -50, z: 0 })
         continue

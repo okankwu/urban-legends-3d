@@ -348,6 +348,17 @@ export default function Peds() {
       animateWalk(rig, p.phase, moving ? Math.min(1, speedNow / 1.4) : 0)
       const vis = PED_VIS[quality]
       rig.root.visible = p.state !== 'inside' && Math.abs(p.x - player.x) < vis && Math.abs(p.z - player.z) < vis
+      if (rig.root.visible) {
+        // level of detail: past ~40 m a person is a few pixels tall, so skip the arms and hair (3 of 7 draw calls)
+        const near = (p.x - player.x) ** 2 + (p.z - player.z) ** 2 < 40 * 40
+        if (rig.root.userData.near !== near) {
+          rig.root.userData.near = near
+          if (rig.armL) rig.armL.visible = near
+          if (rig.armR) rig.armR.visible = near
+          const hair = rig.body?.children[2]
+          if (hair) hair.visible = near
+        }
+      }
       rig.root.position.set(p.x, p.state === 'down' ? 0.12 : 0, p.z)
       rig.root.rotation.set(p.state === 'down' ? -Math.PI / 2 : 0, p.heading, 0)
       p.info.x = p.x

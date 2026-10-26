@@ -315,7 +315,11 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
     const blink = Math.floor(performance.now() / 380) % 2 === 0
     indMatL.color.set(lightsRef.current.left && blink ? '#ffb000' : '#5a3a00')
     indMatR.color.set(lightsRef.current.right && blink ? '#ffb000' : '#5a3a00')
-    for (const sp of [spotL.current, spotR.current]) if (sp) sp.intensity = headOn ? 1400 : 0
+    for (const sp of [spotL.current, spotR.current]) {
+      if (!sp) continue
+      sp.intensity = headOn ? 1400 : 0
+      sp.visible = headOn // an off light still costs every lit pixel, so take it out of the lighting pass
+    }
 
     // damage: sudden deceleration hurts, wrecks go grey
     damageCooldown.current -= dt
@@ -380,8 +384,8 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
         )}
         <primitive object={targetL} position={[-0.7, -0.4, 30]} />
         <primitive object={targetR} position={[0.7, -0.4, 30]} />
-        <spotLight ref={spotL} position={[-0.66 * (prep.isBike ? 0.2 : 1), lightY + 0.03, prep.halfL]} angle={0.5} penumbra={0.6} distance={70} decay={1.6} color="#fff2c4" target={targetL} />
-        <spotLight ref={spotR} position={[0.66 * (prep.isBike ? 0.2 : 1), lightY + 0.03, prep.halfL]} angle={0.5} penumbra={0.6} distance={70} decay={1.6} color="#fff2c4" target={targetR} />
+        <spotLight ref={spotL} visible={false} position={[-0.66 * (prep.isBike ? 0.2 : 1), lightY + 0.03, prep.halfL]} angle={0.5} penumbra={0.6} distance={70} decay={1.6} color="#fff2c4" target={targetL} />
+        <spotLight ref={spotR} visible={false} position={[0.66 * (prep.isBike ? 0.2 : 1), lightY + 0.03, prep.halfL]} angle={0.5} penumbra={0.6} distance={70} decay={1.6} color="#fff2c4" target={targetR} />
       </group>
     </RigidBody>
   )

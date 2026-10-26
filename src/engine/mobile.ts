@@ -59,14 +59,15 @@ export function initMobile() {
     if (s.touch !== prev.touch) flag()
   })
 
-  // first run on a touch device: start light (low quality, adaptive resolution on)
   let hasSaved = false
   try {
     hasSaved = localStorage.getItem(SETTINGS_KEY) !== null
   } catch {
     /* storage unavailable */
   }
-  if (coarse && !hasSaved) {
+  // first run on a touch device, or on a machine with few CPU cores: start light (low quality, adaptive resolution on)
+  const weak = (navigator.hardwareConcurrency ?? 8) <= 4
+  if ((coarse || weak) && !hasSaved) {
     useGame.getState().set({ quality: 'low', autoQuality: true })
     saveSettings()
   }
