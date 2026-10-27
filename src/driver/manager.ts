@@ -127,8 +127,13 @@ function stageMarkers(r: Run): Marker[] {
     return out
   }
   const kind = s.kind === 'pickup' ? 'pickup' : 'cp'
-  const label = s.kind === 'pickup' ? 'Pickup' : s.kind === 'park' ? 'Parking bay' : 'Destination'
+  const label = s.kind === 'pickup' ? 'Pickup' : s.kind === 'park' ? 'Parking bay' : 'Drop-off'
   out.push({ x: s.at.x, z: s.at.z, kind, label, r: Math.max(3, Math.min(s.r, 9)) })
+  // while heading to a pickup, the drop-off is already on the map (red pickup pin, green drop-off pin)
+  if (s.kind === 'pickup') {
+    const drop = r.job.stages.find((q, k) => k > r.stage && (q.kind === 'dropoff' || q.kind === 'hold'))
+    if (drop) out.push({ x: drop.at.x, z: drop.at.z, kind: 'cp', label: 'Drop-off', r: Math.max(3, Math.min(drop.r, 9)) })
+  }
   return out
 }
 

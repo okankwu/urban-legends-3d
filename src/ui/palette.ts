@@ -3,7 +3,7 @@ import type { MarkerKind } from '../missions/types'
 
 const NORMAL: Record<MarkerKind, string> = {
   goal: '#ffd24a',
-  pickup: '#5ec8ff',
+  pickup: '#ff3b3b',
   clue: '#ff9bd0',
   cp: '#3dff8a',
   finish: '#ffffff',
@@ -15,7 +15,7 @@ const NORMAL: Record<MarkerKind, string> = {
 /** Okabe–Ito based set that stays distinguishable with red/green colour-vision deficiency. */
 const SAFE: Record<MarkerKind, string> = {
   goal: '#E69F00',
-  pickup: '#56B4E9',
+  pickup: '#CC79A7',
   clue: '#CC79A7',
   cp: '#F0E442',
   finish: '#ffffff',

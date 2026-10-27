@@ -93,13 +93,30 @@ export default function MapScreen() {
         g.fillStyle = MARKER_COLOR[m.kind]
         g.strokeStyle = '#000'
         g.lineWidth = 2
-        g.beginPath()
-        g.arc(tx(m.x), tz(m.z), 7, 0, Math.PI * 2)
-        g.fill()
-        g.stroke()
-        if (m.label) {
+        if (m.kind === 'pickup' || m.kind === 'cp') {
+          // pickup (red) and drop-off (green) are drawn as map pins, with the tip on the spot
+          const px = tx(m.x)
+          const pz = tz(m.z)
+          g.beginPath()
+          g.arc(px, pz - 14, 9, Math.PI * 0.85, Math.PI * 2.15)
+          g.lineTo(px, pz)
+          g.closePath()
+          g.fill()
+          g.stroke()
           g.fillStyle = '#fff'
-          g.fillText(m.label, tx(m.x), tz(m.z) - 11)
+          g.beginPath()
+          g.arc(px, pz - 14, 3.2, 0, Math.PI * 2)
+          g.fill()
+          if (m.label) g.fillText(m.label, px, pz - 28)
+        } else {
+          g.beginPath()
+          g.arc(tx(m.x), tz(m.z), 7, 0, Math.PI * 2)
+          g.fill()
+          g.stroke()
+          if (m.label) {
+            g.fillStyle = '#fff'
+            g.fillText(m.label, tx(m.x), tz(m.z) - 11)
+          }
         }
       }
       if (st.waypoint) {
