@@ -16,7 +16,9 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 
 const CAR_URL = import.meta.env.BASE_URL + 'models/subaru.glb'
 const CAR_LENGTH = 4.45
-const SUSP_REST = 0.28
+// The wheel mounts stay where they were (SUSP_MOUNT); a longer rest length lets the springs hold the body about 9 cm higher
+const SUSP_MOUNT = 0.28
+const SUSP_REST = 0.37
 
 /**
  * The Sketchfab car is ~180 separate meshes. Everything that is not a wheel is baked into one mesh per
@@ -192,7 +194,7 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
     const c = world.createVehicleController(b)
     ctrl.current = c
     for (const w of prep.wheels) {
-      c.addWheel({ x: w.cx, y: w.cy + SUSP_REST, z: w.cz }, { x: 0, y: -1, z: 0 }, { x: -1, y: 0, z: 0 }, SUSP_REST, prep.radius)
+      c.addWheel({ x: w.cx, y: w.cy + SUSP_MOUNT, z: w.cz }, { x: 0, y: -1, z: 0 }, { x: -1, y: 0, z: 0 }, SUSP_REST, prep.radius)
     }
     for (let i = 0; i < nWheels; i++) {
       c.setWheelSuspensionStiffness(i, 38)
@@ -296,7 +298,7 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
     for (let i = 0; i < nWheels; i++) {
       const w = prep.wheels[i]
       const len = c.wheelSuspensionLength(i) ?? SUSP_REST
-      w.hub.position.y = w.cy + SUSP_REST - len
+      w.hub.position.y = w.cy + SUSP_MOUNT - len
       if (w.front) w.steer.rotation.y = steer.current
       w.spin.rotation.x = c.wheelRotation(i) ?? 0
     }

@@ -6,11 +6,11 @@ export type Pose = Record<string, Euler3>
 
 // Bone frames are mirrored left/right for the arms (verified visually): +Z lowers the right arm, -Z the left.
 const ARMS_DOWN: Pose = {
-  LeftArm: [0, 0, -1.05],
-  RightArm: [0, 0, 1.05],
+  LeftArm: [0, 0, -0.45],
+  RightArm: [0, 0, 0.45],
   // the model's bind-pose elbows are bent forward; -X straightens them so the arms hang naturally
-  LeftForeArm: [-0.7, 0, 0],
-  RightForeArm: [-0.7, 0, 0],
+  LeftForeArm: [-0.25, 0, 0],
+  RightForeArm: [-0.25, 0, 0],
 }
 
 export const POSES: Record<string, Pose> = {

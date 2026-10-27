@@ -1,11 +1,13 @@
 import { useGame } from '../store/game'
 import { MISSIONS } from '../missions/missions'
+import CloseButton from './CloseButton'
 
 /** Tab: mission log, stats and carried items. */
 export default function Journal() {
   const s = useGame()
   return (
     <div className="overlay" role="dialog" aria-label="Journal">
+      <CloseButton label="journal" />
       <div className="journal">
         <h2>{s.appearance.name}&apos;s journal</h2>
         <div className="jgrid">
@@ -38,7 +40,7 @@ export default function Journal() {
             <div>{s.unlocks.join(' · ')}</div>
           </>
         )}
-        <small style={{ color: 'var(--muted)' }}>Tab or Esc to close</small>
+        <small style={{ color: 'var(--muted)' }}>Tab or Esc to close, or use the Close button</small>
       </div>
     </div>
   )

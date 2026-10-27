@@ -6,6 +6,7 @@ import { useGame } from '../store/game'
 import type { MarkerKind } from '../missions/types'
 import { markerColor } from './palette'
 import { activeGarages } from '../garage/garages'
+import CloseButton from './CloseButton'
 import { gps } from '../driver/gps'
 
 const RANGE = HALF_WORLD + 24
@@ -146,6 +147,7 @@ export default function MapScreen() {
   const all = [...dj, ...markers, ...starts].filter((m) => m.kind !== 'search')
   return (
     <div className="overlay" role="dialog" aria-label="City map">
+      <CloseButton label="map" />
       <div className="map-wrap">
         <canvas
           ref={ref}

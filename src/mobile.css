@@ -97,3 +97,6 @@ html[data-touch='yes'] .minimap-wrap, html[data-touch='yes'] .hud { touch-action
 html[data-motion='reduce'] .rotate-icon { animation: none; }
 /* the expanded GPS sits inside the HUD layer, which is below the touch layer: free the area the drag-to-look pad covers */
 html[data-touch='yes'] .touch.gps-open .touch-look { display: none; }
+
+/* close button for the full-screen map and journal (always visible; sits clear of notches) */
+.overlay-close { position: fixed; top: max(10px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); z-index: 30; min-height: 44px; padding: 8px 18px; font-weight: 700; background: var(--accent); color: #151515; border-color: transparent; border-radius: 10px; }
