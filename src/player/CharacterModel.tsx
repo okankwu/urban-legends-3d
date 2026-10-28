@@ -68,6 +68,7 @@ export default function CharacterModel({ state }: { state: React.MutableRefObjec
   const current = useRef('')
   const hips = useMemo(() => (custom ? scene.getObjectByName(custom.hipsName) : boneBy(scene, 'Hips')), [scene, custom])
   const hipsBase = useMemo(() => hips?.position.clone(), [hips])
+  const lastDrop = useRef(0)
   const head = useMemo(() => (custom ? null : boneBy(scene, 'Head')), [scene, custom])
 
   useEffect(() => {
@@ -132,6 +133,8 @@ export default function CharacterModel({ state }: { state: React.MutableRefObjec
     if (hips && hipsBase) {
       const drop = s.seated ? 0.45 : s.crouch ? 0.32 : 0
       if (drop > 0) hips.position.y = hipsBase.y - drop / (hips.parent ? hips.parent.getWorldScale(new THREE.Vector3()).y || 1 : 1)
+      else if (lastDrop.current > 0) hips.position.y = hipsBase.y // standing again: the pose clips do not key the hips, so put them back
+      lastDrop.current = drop
     }
     if (head) head.scale.setScalar(appearance.headSize)
   })
