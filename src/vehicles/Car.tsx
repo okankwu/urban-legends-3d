@@ -152,6 +152,23 @@ export function prepareGLB(source: THREE.Object3D, cfg: GlbConfig): Prepared {
   }
 }
 
+/** Soft dark blob drawn under a vehicle when real shadows are off (Low quality), so it still looks planted on the road. */
+let blobMat: THREE.MeshBasicMaterial | null = null
+function blobMaterial() {
+  if (blobMat) return blobMat
+  const c = document.createElement('canvas')
+  c.width = c.height = 64
+  const g = c.getContext('2d')!
+  const grad = g.createRadialGradient(32, 32, 4, 32, 32, 32)
+  grad.addColorStop(0, 'rgba(0,0,0,0.75)')
+  grad.addColorStop(0.6, 'rgba(0,0,0,0.4)')
+  grad.addColorStop(1, 'rgba(0,0,0,0)')
+  g.fillStyle = grad
+  g.fillRect(0, 0, 64, 64)
+  blobMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, fog: true })
+  return blobMat
+}
+
 function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpec; damagePaint: boolean }) {
   const quality = useGame((s) => s.quality)
   const body = useRef<RapierRigidBody>(null)
@@ -364,6 +381,11 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
       <CuboidCollider args={[halfW, hh, prep.halfL * 0.96]} position={[0, bottom + hh, 0]} mass={spec.mass * 0.64} />
       <CuboidCollider args={[Math.min(0.5, halfW), 0.1, 0.9]} position={[0, bottom + 0.1, 0]} mass={spec.mass * 0.36} />
       <primitive object={prep.root} />
+      {quality === 'low' && !prep.isBike && (
+        <mesh position={[0, prep.wheelCy - prep.radius + 0.04, 0]} rotation-x={-Math.PI / 2} material={blobMaterial()} renderOrder={1}>
+          <planeGeometry args={[prep.halfW * 2.6, prep.halfL * 2.5]} />
+        </mesh>
+      )}
       <Dashboard prep={prep} />
       <group>
         {[-lamp, lamp].map((x) => (
