@@ -5,6 +5,7 @@ import { JOB_BOARD, MISSIONS, makeJob, mission } from './missions'
 import type { Ctx, MissionDef } from './missions'
 import { banner, failHooks, repairCar, resetHooks, teleportCar, teleportPlayer } from './actions'
 import { clearProgress, loadProgress, saveProgress } from './progress'
+import { STARTER_VEHICLES } from '../vehicles/specs'
 import { stopRace } from './Race'
 import type { Marker } from './types'
 
@@ -164,8 +165,8 @@ export function newGame() {
     vehicleHealth: 100,
     wanted: 0,
     searching: false,
-    ownedVehicles: ['subaru'],
-    currentVehicle: 'subaru',
+    ownedVehicles: [...STARTER_VEHICLES],
+    currentVehicle: STARTER_VEHICLES.includes(useGame.getState().currentVehicle) ? useGame.getState().currentVehicle : 'subaru',
     paint: {},
     inShop: null,
   })

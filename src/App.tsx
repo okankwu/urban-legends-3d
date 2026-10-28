@@ -37,6 +37,8 @@ import DriverJobsMenu from './ui/DriverJobsMenu'
 import { useGame } from './store/game'
 import Creator from './characters/Creator'
 import CreatorStage from './characters/CreatorStage'
+import VehicleStage from './vehicles/VehicleStage'
+import VehicleSelect from './ui/VehicleSelect'
 import { initMobile } from './engine/mobile'
 import { RotateHint } from './ui/MobileExtras'
 import { buildCustomRig, loadCustomFile, setCustomRig } from './characters/customRig'
@@ -122,6 +124,7 @@ function Game() {
             <Interactions />
             <CameraRig />
             {phase === 'creator' && <CreatorStage />}
+            {phase === 'vehicles' && <VehicleStage />}
           </Physics>
         </Suspense>
       </Canvas>
@@ -130,6 +133,7 @@ function Game() {
       {(phase === 'playing' || phase === 'paused' || phase === 'shop' || phase === 'map' || phase === 'journal' || phase === 'garage' || phase === 'jobs') && <HUD />}
       {phase === 'jobs' && <DriverJobsMenu />}
       {phase === 'creator' && <Creator />}
+      <VehicleSelect />
       {phase === 'map' && <MapScreen />}
       {phase === 'journal' && <Journal />}
       <TouchControls />

@@ -200,3 +200,13 @@ html[data-contrast='high'] button { border: 2px solid #fff; }
 .menu { display: flex; overflow-y: auto; }
 .menu-card { margin: auto; padding: 16px 0; }
 .overlay { overflow-y: auto; }
+
+/* ---------- Vehicle selection ---------- */
+.veh-list { display: grid; gap: 6px; overflow: auto; min-height: 0; max-height: 38vh; }
+.veh-list .shop-line.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.veh-stats { display: grid; gap: 8px; font-size: 12.5px; color: #d7dcea; border-top: 1px solid rgba(255,255,255,.12); padding-top: 10px; }
+.veh-blurb { margin: 0; color: var(--muted); line-height: 1.45; }
+.veh-row { display: grid; grid-template-columns: 92px 1fr auto; gap: 10px; align-items: center; }
+.veh-row b { font-size: 12px; min-width: 70px; text-align: right; }
+.veh-bar { display: block; height: 7px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
+.veh-bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }

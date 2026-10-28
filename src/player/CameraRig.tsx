@@ -45,6 +45,14 @@ export default function CameraRig() {
       init = false
       return
     }
+    if (st.phase === 'vehicles') {
+      // vehicle selection: a fixed three-quarter view of the turntable
+      // looks a little left of the car so it sits clear of the list panel
+      camera.position.set(4.6, STAGE_Y + 2.2, 8.6)
+      camera.lookAt(-1.5, STAGE_Y + 0.7, 0)
+      init = false
+      return
+    }
     const dt = Math.min(rawDt, 0.05)
     const inCar = st.inVehicle
     const cam = camera as THREE.PerspectiveCamera

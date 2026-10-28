@@ -6,12 +6,13 @@ import { loadProgress } from '../missions/progress'
 import { isObj, num, parseStored } from '../security'
 import type { ActiveMission, Banner, Marker, RaceHud } from '../missions/types'
 import { defaultDriver, normalizeDriver } from '../driver/rewards'
+import { STARTER_VEHICLES } from '../vehicles/specs'
 import type { DriverData } from '../driver/rewards'
 import type { JobHud, JobResult } from '../driver/types'
 
 export type Quality = 'low' | 'medium' | 'high'
 export type Weather = 'clear' | 'cloudy' | 'rain' | 'storm' | 'fog'
-export type Phase = 'menu' | 'creator' | 'playing' | 'paused' | 'shop' | 'map' | 'journal' | 'garage' | 'jobs'
+export type Phase = 'menu' | 'creator' | 'playing' | 'paused' | 'shop' | 'map' | 'journal' | 'garage' | 'jobs' | 'vehicles'
 
 export interface GameState {
   phase: Phase
@@ -34,6 +35,9 @@ export interface GameState {
   /** bumps when an uploaded model is (re)loaded so the character remounts */
   customVersion: number
   creatorReturn: 'menu' | 'paused'
+  /** where the vehicle selection screen returns to, and the model it is showing */
+  vehicleReturn: 'menu' | 'paused'
+  previewVehicle: string
   /** id of the shop the player is inside, or null */
   inShop: string | null
   /** contextual interaction prompt (shops, pedestrians) */
@@ -157,7 +161,7 @@ if (import.meta.env.DEV) {
 function progressDefaults(): Partial<GameState> {
   const p = loadProgress()
   if (!p) return {}
-  return { driver: normalizeDriver(p.driver), money: p.money, health: p.health, completed: p.completed, earnedTotal: p.earnedTotal, jobsDone: p.jobsDone, reputation: p.reputation, unlocks: p.unlocks, hour: p.hour, ownedVehicles: p.ownedVehicles ?? ['subaru'], currentVehicle: p.currentVehicle ?? 'subaru', paint: p.paint ?? {} }
+  return { driver: normalizeDriver(p.driver), money: p.money, health: p.health, completed: p.completed, earnedTotal: p.earnedTotal, jobsDone: p.jobsDone, reputation: p.reputation, unlocks: p.unlocks, hour: p.hour, ownedVehicles: p.ownedVehicles ?? [...STARTER_VEHICLES], currentVehicle: p.currentVehicle ?? 'subaru', paint: p.paint ?? {} }
 }
 
 export const useGame = create<GameState>((set) => ({
@@ -180,6 +184,8 @@ export const useGame = create<GameState>((set) => ({
   hasSavedCharacter: loadAppearance().saved,
   customVersion: 0,
   creatorReturn: 'menu',
+  vehicleReturn: 'menu',
+  previewVehicle: 'subaru',
   inShop: null,
   prompt: '',
   dialogue: null,
@@ -201,7 +207,7 @@ export const useGame = create<GameState>((set) => ({
   mprompt: '',
   hasProgress: !!loadProgress(),
   currentVehicle: 'subaru',
-  ownedVehicles: ['subaru'],
+  ownedVehicles: [...STARTER_VEHICLES],
   paint: {},
   weather: 'clear',
   wetness: 0,

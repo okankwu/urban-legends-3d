@@ -206,6 +206,7 @@ export default function Menus() {
   if (s.phase !== 'menu' && s.phase !== 'paused') return null
 
   const openCreator = () => s.set({ phase: 'creator', panel: 'none', creatorCost: 0, creatorReturn: s.phase === 'paused' ? 'paused' : 'menu' })
+  const openVehicles = () => s.set({ phase: 'vehicles', panel: 'none', vehicleReturn: s.phase === 'paused' ? 'paused' : 'menu' })
   const start = () => {
     // first launch: make the player create a character before entering the city
     if (isCoarsePointer()) void enterFullscreen()
@@ -247,6 +248,7 @@ export default function Menus() {
             {s.phase === 'menu' && s.hasProgress && <button onClick={fresh}>New Game</button>}
             {s.phase === 'paused' && <button onClick={save}>Save Game</button>}
             {s.phase === 'paused' && <button onClick={() => s.set({ phase: 'jobs' })}>Driver Jobs</button>}
+            <button onClick={openVehicles}>Choose Vehicle</button>
             <button onClick={openCreator}>Character Creator</button>
             <button onClick={() => s.set({ panel: 'controls' })}>Controls</button>
             <button onClick={() => s.set({ panel: 'settings' })}>Settings</button>

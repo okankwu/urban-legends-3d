@@ -2,7 +2,7 @@ import { useGame } from '../store/game'
 import { rt } from '../engine/runtime'
 import { normalizeDriver } from '../driver/rewards'
 import type { DriverData } from '../driver/rewards'
-import { SPECS } from '../vehicles/specs'
+import { SPECS, STARTER_VEHICLES } from '../vehicles/specs'
 import { hexColor, int, isObj, num, parseStored, point, str, strArr } from '../security'
 
 const KEY = 'ul3d.progress.v1'
@@ -32,7 +32,7 @@ const VEHICLE_IDS = SPECS.map((s) => s.id as string)
 export function sanitizeProgress(r: Record<string, unknown> | null): Progress | null {
   if (!r) return null
   const owned = strArr(r.ownedVehicles, 12, 20).filter((id) => VEHICLE_IDS.includes(id))
-  if (!owned.includes('subaru')) owned.unshift('subaru')
+  for (const id of STARTER_VEHICLES) if (!owned.includes(id)) owned.push(id)
   const paint: Record<string, string> = {}
   if (isObj(r.paint)) for (const id of VEHICLE_IDS) if (hexColor(r.paint[id])) paint[id] = r.paint[id] as string
   const car = point(r.car)

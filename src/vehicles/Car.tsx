@@ -9,13 +9,12 @@ import { useGame } from '../store/game'
 import { nightFactor } from '../city/City'
 import { SPAWN } from '../city/layout'
 import { buildProcedural, spec as specOf } from './specs'
-import type { Prepared, VehicleSpec } from './specs'
+import type { GlbConfig, Prepared, VehicleSpec } from './specs'
 import { reportCrash } from '../police/wanted'
 import Dashboard from './Dashboard'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
-const CAR_URL = import.meta.env.BASE_URL + 'models/subaru.glb'
-const CAR_LENGTH = 4.45
+export const glbUrl = (cfg: GlbConfig) => import.meta.env.BASE_URL + 'models/' + cfg.file
 // The wheel mounts stay where they were (SUSP_MOUNT); a longer rest length lets the springs hold the body about 9 cm higher
 const SUSP_MOUNT = 0.28
 const SUSP_REST = 0.37
@@ -76,8 +75,8 @@ function mergeStatic(holder: THREE.Object3D, root: THREE.Object3D) {
   return { before: done.length, after: merged }
 }
 
-/** Normalizes the Sketchfab model: front -> +Z, real-world length, wheels on steer/spin pivots. */
-function prepareGLB(source: THREE.Object3D): Prepared {
+/** Normalizes a car model: front -> +Z, real-world length, wheels on steer/spin pivots. */
+export function prepareGLB(source: THREE.Object3D, cfg: GlbConfig): Prepared {
   const model = source.clone(true)
   const holder = new THREE.Group()
   holder.add(model)
@@ -100,7 +99,7 @@ function prepareGLB(source: THREE.Object3D): Prepared {
   holder.updateMatrixWorld(true)
 
   let box = new THREE.Box3().setFromObject(holder)
-  holder.scale.setScalar(CAR_LENGTH / (box.max.z - box.min.z))
+  holder.scale.setScalar(cfg.length / (box.max.z - box.min.z))
   holder.updateMatrixWorld(true)
   box = new THREE.Box3().setFromObject(holder)
 
@@ -147,8 +146,8 @@ function prepareGLB(source: THREE.Object3D): Prepared {
     lightY: wheelCy - radius + 0.28 + 0.62,
     cockpit: (() => {
       const ground = wheelCy - radius
-      const belt = ground + 0.93
-      return { eye: [0.36, belt + 0.28, -0.25] as [number, number, number], belt, zFront: 0.8 }
+      const belt = ground + cfg.belt
+      return { eye: [cfg.eye[0], belt + cfg.eye[1], cfg.eye[2]] as [number, number, number], belt, zFront: cfg.zFront, zBack: cfg.zBack }
     })(),
   }
 }
@@ -393,9 +392,9 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
   )
 }
 
-function SubaruVehicle({ spec }: { spec: VehicleSpec }) {
-  const gltf = useGLTF(CAR_URL, false, true)
-  const prep = useMemo(() => prepareGLB(gltf.scene), [gltf.scene])
+function GlbVehicle({ spec, cfg }: { spec: VehicleSpec; cfg: GlbConfig }) {
+  const gltf = useGLTF(glbUrl(cfg), false, true)
+  const prep = useMemo(() => prepareGLB(gltf.scene, cfg), [gltf.scene, cfg])
   return <Vehicle prep={prep} spec={spec} damagePaint={false} />
 }
 
@@ -452,9 +451,9 @@ export default function Car() {
   const color = paint[id] ?? sp.defaultColor
   return (
     <>
-      {id === 'subaru' ? (
+      {sp.glb ? (
         <Suspense fallback={null}>
-          <SubaruVehicle key="subaru" spec={sp} />
+          <GlbVehicle key={sp.id} spec={sp} cfg={sp.glb} />
         </Suspense>
       ) : (
         <ProceduralVehicle key={id + color} spec={sp} color={color} />
@@ -464,4 +463,8 @@ export default function Car() {
   )
 }
 
-useGLTF.preload(CAR_URL, false, true)
+// start fetching the starter model and the saved vehicle's model at load, so the first mount does not wait on the network
+for (const id of new Set(['subaru', useGame.getState().currentVehicle])) {
+  const cfg = specOf(id).glb
+  if (cfg) useGLTF.preload(glbUrl(cfg), false, true)
+}

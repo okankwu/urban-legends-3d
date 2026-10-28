@@ -101,8 +101,8 @@ export default function GarageUI() {
           )}
 
           {tab === 'paint' &&
-            (s.currentVehicle === 'subaru' ? (
-              <div className="shop-money">The Impreza keeps its factory blue (its model has a baked paint job). Paint the other vehicles here.</div>
+            (cur.glb ? (
+              <div className="shop-money">{cur.name} keeps its factory paint (its model has a baked paint job). Paint the other vehicles here.</div>
             ) : (
               <>
                 <div className="shop-money">Respray {cur.name} — $300 (the vehicle is taken out afterwards)</div>
