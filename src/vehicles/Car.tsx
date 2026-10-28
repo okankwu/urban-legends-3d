@@ -117,6 +117,13 @@ export function prepareGLB(source: THREE.Object3D, cfg: GlbConfig): Prepared {
   const wheels: Prepared['wheels'] = []
   nodes.forEach((n, i) => {
     const c = center(n)
+    let wr: number | undefined
+    if (cfg.radiusFromLength) {
+      // the tyre's profile length gives its true radius; the axle sits one radius above the lowest point
+      const wb = new THREE.Box3().setFromObject(n)
+      wr = (wb.max.z - wb.min.z) / 2
+      c.y = wb.min.y + wr
+    }
     const hub = new THREE.Group()
     hub.position.copy(c)
     const steer = new THREE.Group()
@@ -126,7 +133,7 @@ export function prepareGLB(source: THREE.Object3D, cfg: GlbConfig): Prepared {
     root.add(hub)
     root.updateMatrixWorld(true)
     spin.attach(n)
-    wheels.push({ hub, steer, spin, front: i < 2, cx: c.x, cy: c.y, cz: c.z })
+    wheels.push({ hub, steer, spin, front: i < 2, cx: c.x, cy: c.y, cz: c.z, r: wr })
   })
 
   const stats = mergeStatic(holder, root)
@@ -210,7 +217,7 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
     const c = world.createVehicleController(b)
     ctrl.current = c
     for (const w of prep.wheels) {
-      c.addWheel({ x: w.cx, y: w.cy + SUSP_MOUNT, z: w.cz }, { x: 0, y: -1, z: 0 }, { x: -1, y: 0, z: 0 }, SUSP_REST, prep.radius)
+      c.addWheel({ x: w.cx, y: w.cy + SUSP_MOUNT, z: w.cz }, { x: 0, y: -1, z: 0 }, { x: -1, y: 0, z: 0 }, SUSP_REST + (spec.glb?.lift ?? 0), w.r ?? prep.radius)
     }
     for (let i = 0; i < nWheels; i++) {
       c.setWheelSuspensionStiffness(i, 38)
