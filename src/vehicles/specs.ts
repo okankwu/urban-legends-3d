@@ -18,6 +18,8 @@ export interface GlbConfig {
   radiusFromLength?: boolean
   /** extra suspension rest length (metres) to raise the body off the road */
   lift?: number
+  /** draw the sports-car interior in the cockpit view */
+  sport?: boolean
 }
 
 export interface Prepared {
@@ -37,7 +39,7 @@ export interface Prepared {
   lightY: number
   isBike?: boolean
   /** driver's eye position and dash geometry in chassis space (cockpit camera + dashboard) */
-  cockpit?: { eye: [number, number, number]; belt: number; zFront: number; /** rear of the cabin; when set the dash module lays a dark interior floor over the body's top face */ zBack?: number; noDash?: boolean }
+  cockpit?: { eye: [number, number, number]; belt: number; zFront: number; /** rear of the cabin; when set the dash module lays a dark interior floor over the body's top face */ zBack?: number; noDash?: boolean; /** adds bucket seats, centre tunnel, door cards and a headliner */ sport?: boolean }
 }
 
 export interface VehicleSpec {
@@ -64,8 +66,8 @@ export const SPECS: VehicleSpec[] = [
     glb: { file: 'subaru.glb', length: 4.45, belt: 0.93, eye: [0.36, 0.28, -0.25], zFront: 0.8 } },
   { id: 'titan', name: 'Desert Titan', cls: 'Off-road SUV', price: 0, mass: 2100, engine: 4900, maxSpeed: 44, reverseMax: 11, steer: 0.5, grip: 10.5, defaultColor: '#d9b7a6', blurb: 'Boxy, tall and tough, with chunky all-terrain tyres and a roof rack.',
     glb: { file: 'titan.glb', length: 4.5, belt: 0.98, eye: [0.38, 0.4, -0.35], zFront: 0.6, zBack: -1.9, radiusFromLength: true } },
-  { id: 'velocity', name: 'Midnight Velocity', cls: 'Hypercar', price: 0, mass: 1250, engine: 5600, maxSpeed: 70, reverseMax: 12, steer: 0.48, grip: 13, defaultColor: '#e8e8ee', blurb: 'Low, white and orange with a rear wing. Very fast; treat it with respect.',
-    glb: { file: 'velocity.glb', length: 4.5, belt: 0.62, eye: [0.3, 0.27, -0.1], zFront: 0.95, zBack: -0.95, radiusFromLength: true, lift: 0.04 } },
+  { id: 'velocity', name: 'Midnight Velocity', cls: 'Hypercar', price: 0, mass: 1250, engine: 6000, maxSpeed: 74, reverseMax: 12, steer: 0.46, grip: 14, defaultColor: '#e8e8ee', blurb: 'Low, white and orange with a rear wing. Very fast; treat it with respect.',
+    glb: { file: 'velocity.glb', length: 4.5, belt: 0.62, eye: [0.3, 0.27, -0.1], zFront: 0.95, zBack: -0.95, radiusFromLength: true, lift: 0.04, sport: true } },
   { id: 'sedan', name: 'Civic Sedan', cls: 'Sedan', price: 4500, mass: 1500, engine: 3700, maxSpeed: 42, reverseMax: 11, steer: 0.55, grip: 10, defaultColor: '#b3201f', blurb: 'Reliable family sedan.' },
   { id: 'suv', name: 'Ranger SUV', cls: 'SUV', price: 9000, mass: 2000, engine: 4600, maxSpeed: 40, reverseMax: 11, steer: 0.5, grip: 10, defaultColor: '#2f5d3a', blurb: 'Tall, heavy and hard to stop.' },
   { id: 'pickup', name: 'Bison Pickup', cls: 'Pickup truck', price: 8000, mass: 2100, engine: 4700, maxSpeed: 40, reverseMax: 11, steer: 0.5, grip: 9.5, defaultColor: '#d8a31b', blurb: 'Open bed, big engine.' },

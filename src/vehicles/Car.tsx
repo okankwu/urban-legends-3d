@@ -136,6 +136,16 @@ export function prepareGLB(source: THREE.Object3D, cfg: GlbConfig): Prepared {
     wheels.push({ hub, steer, spin, front: i < 2, cx: c.x, cy: c.y, cz: c.z, r: wr })
   })
 
+  if (cfg.sport) {
+    // the model's glass is baked into one double-sided shell; culling its back faces lets the driver see out through the windows
+    root.traverse((o) => {
+      const m = o as THREE.Mesh
+      if (m.isMesh && !Array.isArray(m.material) && m.material.side !== THREE.FrontSide) {
+        m.material.side = THREE.FrontSide
+        m.material.needsUpdate = true
+      }
+    })
+  }
   const stats = mergeStatic(holder, root)
   if (import.meta.env.DEV) console.info('[car] merged static meshes', stats)
   const b2 = new THREE.Box3().setFromObject(root)
@@ -154,7 +164,7 @@ export function prepareGLB(source: THREE.Object3D, cfg: GlbConfig): Prepared {
     cockpit: (() => {
       const ground = wheelCy - radius
       const belt = ground + cfg.belt
-      return { eye: [cfg.eye[0], belt + cfg.eye[1], cfg.eye[2]] as [number, number, number], belt, zFront: cfg.zFront, zBack: cfg.zBack }
+      return { eye: [cfg.eye[0], belt + cfg.eye[1], cfg.eye[2]] as [number, number, number], belt, zFront: cfg.zFront, zBack: cfg.zBack, sport: cfg.sport }
     })(),
   }
 }

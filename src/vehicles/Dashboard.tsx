@@ -40,6 +40,46 @@ function labelTexture(text: string) {
   return t
 }
 
+const TRIM = '#e86f1c'
+
+/** Bucket seats, centre tunnel, door cards and headliner so a coupe's cabin reads as a sports-car interior. */
+function SportInterior({ belt, zf, zBack, seatX, seatZ, halfW }: { belt: number; zf: number; zBack: number; seatX: number; seatZ: number; halfW: number }) {
+  const leather = useMemo(() => new THREE.MeshStandardMaterial({ color: '#0f1115', roughness: 0.7 }), [])
+  const trim = useMemo(() => new THREE.MeshStandardMaterial({ color: TRIM, roughness: 0.6 }), [])
+  const carbon = useMemo(() => new THREE.MeshStandardMaterial({ color: '#181a1f', roughness: 0.35, metalness: 0.4 }), [])
+  const inner = Math.min(0.78, halfW * 0.7)
+  const len = zf - zBack
+  const seat = (x: number) => (
+    <group key={x} position={[x, belt, seatZ - 0.3]}>
+      <mesh position={[0, 0.08, 0.05]} material={leather}><boxGeometry args={[0.44, 0.12, 0.5]} /></mesh>
+      <mesh position={[0, 0.4, -0.2]} rotation={[-0.28, 0, 0]} material={leather}><boxGeometry args={[0.44, 0.66, 0.12]} /></mesh>
+      <mesh position={[-0.235, 0.36, -0.15]} rotation={[-0.28, 0, 0]} material={leather}><boxGeometry args={[0.07, 0.5, 0.2]} /></mesh>
+      <mesh position={[0.235, 0.36, -0.15]} rotation={[-0.28, 0, 0]} material={leather}><boxGeometry args={[0.07, 0.5, 0.2]} /></mesh>
+      <mesh position={[0, 0.5, -0.1]} rotation={[-0.28, 0, 0]} material={trim}><boxGeometry args={[0.2, 0.34, 0.012]} /></mesh>
+      <mesh position={[0, 0.82, -0.26]} rotation={[-0.28, 0, 0]} material={leather}><boxGeometry args={[0.24, 0.16, 0.1]} /></mesh>
+    </group>
+  )
+  return (
+    <group>
+      {seat(seatX)}
+      {seat(-seatX)}
+      {/* centre tunnel with a gear selector */}
+      <mesh position={[0, belt + 0.06, (zf + zBack) / 2 + 0.1]} material={carbon}><boxGeometry args={[0.2, 0.12, len * 0.7]} /></mesh>
+      <mesh position={[0, belt + 0.13, seatZ + 0.15]} material={trim}><boxGeometry args={[0.05, 0.03, 0.12]} /></mesh>
+      {/* door cards */}
+      {[-1, 1].map((s) => (
+        <group key={s}>
+          <mesh position={[s * inner, belt + 0.22, (zf + zBack) / 2]} material={leather}><boxGeometry args={[0.04, 0.44, len * 0.85]} /></mesh>
+          <mesh position={[s * (inner - 0.025), belt + 0.4, (zf + zBack) / 2]} material={trim}><boxGeometry args={[0.012, 0.014, len * 0.8]} /></mesh>
+        </group>
+      ))}
+      {/* headliner and rear bulkhead */}
+      <mesh position={[0, belt + 0.5, (seatZ + 0.05 + zBack) / 2]} material={carbon}><boxGeometry args={[inner * 2, 0.03, seatZ + 0.05 - zBack]} /></mesh>
+      <mesh position={[0, belt + 0.25, zBack]} material={carbon}><boxGeometry args={[inner * 2, 0.5, 0.04]} /></mesh>
+    </group>
+  )
+}
+
 export default function Dashboard({ prep }: { prep: Prepared }) {
   const cp = prep.cockpit
   const root = useRef<THREE.Group>(null)
@@ -291,6 +331,7 @@ export default function Dashboard({ prep }: { prep: Prepared }) {
           <meshStandardMaterial color="#15171c" roughness={0.95} />
         </mesh>
       )}
+      {cp.sport && <SportInterior belt={belt} zf={zf} zBack={cp.zBack ?? zf - 1.9} seatX={ex} seatZ={ez} halfW={prep.halfW} />}
       {/* dash slab and cowl */}
       <mesh position={[0, belt - 0.11, zf - 0.27]}>
         <boxGeometry args={[width, 0.22, 0.54]} />
