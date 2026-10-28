@@ -83,6 +83,10 @@ The game detects touch screens (or use Accessibility → Touch controls → Alwa
 - **Full screen:** Start Game requests fullscreen + landscape on Android Chrome and tablets (also a button in the top row and in Settings). iPhone Safari has no fullscreen for web pages: use Share → Add to Home Screen and launch it from the icon to get a full-screen, landscape app.
 - The pinch / double-tap page zoom and the long-press menu are disabled on the game surface.
 
+## Security
+
+The game is a static client-side app (no server, database or accounts), so the protections focus on what it does have: a Content Security Policy in the production build, no third-party runtime code, validation of everything read back from storage and of uploaded character files, and a hardened build pipeline (pinned actions, dependency audit, Dependabot). Players can still edit their own local save to cheat; see [SECURITY.md](SECURITY.md) for the details, the limits and what to do if an online backend is ever added.
+
 ## Music
 
 **"Neon Boulevard"** is an original instrumental written for this game (`src/engine/music.ts`): 100 BPM, A minor, 32 bars (about 77 s) that loop through an intro, a groove, a lift with the main melody, and a break. It is composed and synthesised entirely in code (no samples, recordings or borrowed melodies), so it contains nothing third-party; you can use, change and share it freely, including in commercial projects. It plays by default and can be turned off in Settings; it gets mellower at night. **Settings → Download the soundtrack (WAV)** renders the loop to a 22.05 kHz stereo file (about 7 MB, takes up to half a minute) for use elsewhere.

@@ -1,3 +1,5 @@
+import { bool, hexColor, num, oneOf, parseStored, str } from '../security'
+
 export type HairStyle = 'original' | 'mohawk' | 'long' | 'bun' | 'afro'
 export type BaseModel = 'meshy-a' | 'meshy-b' | 'custom'
 
@@ -60,10 +62,31 @@ export const OUTFITS: OutfitPreset[] = [
 
 const KEY = 'ul3d.character.v1'
 
+/** Validates a saved appearance (localStorage is editable): bounded numbers, known enums, #rrggbb colours, a short plain name. */
+export function sanitizeAppearance(r: Record<string, unknown>): Appearance {
+  const d = DEFAULT_APPEARANCE
+  return {
+    name: str(r.name, 18, d.name).trim() || d.name,
+    base: oneOf(r.base, ['meshy-a', 'meshy-b', 'custom'] as const, d.base),
+    skin: hexColor(r.skin),
+    hairColor: hexColor(r.hairColor),
+    hairStyle: oneOf(r.hairStyle, ['original', 'mohawk', 'long', 'bun', 'afro'] as const, d.hairStyle),
+    height: num(r.height, 0.85, 1.15, 1),
+    headSize: num(r.headSize, 0.9, 1.15, 1),
+    topColor: hexColor(r.topColor),
+    pantsColor: hexColor(r.pantsColor),
+    shoesColor: hexColor(r.shoesColor),
+    glasses: bool(r.glasses, false),
+    cap: bool(r.cap, false),
+    headphones: bool(r.headphones, false),
+    backpack: bool(r.backpack, false),
+  }
+}
+
 export function loadAppearance(): { appearance: Appearance; saved: boolean } {
   try {
-    const raw = localStorage.getItem(KEY)
-    if (raw) return { appearance: { ...DEFAULT_APPEARANCE, ...JSON.parse(raw) }, saved: true }
+    const saved = parseStored(localStorage.getItem(KEY))
+    if (saved) return { appearance: sanitizeAppearance(saved), saved: true }
   } catch {
     /* storage unavailable or corrupt */
   }

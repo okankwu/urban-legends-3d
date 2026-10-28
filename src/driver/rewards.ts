@@ -1,4 +1,5 @@
 import type { JobType } from './types'
+import { int, isObj, oneOf, str, strArr } from '../security'
 
 /**
  * RewardPointsSystem + DriverLevelSystem + achievements + daily challenges + leaderboard.
@@ -59,11 +60,56 @@ export const defaultDriver = (): DriverData => ({
   seq: 0,
 })
 
-/** Fills in anything an older save lacks. */
-export function normalizeDriver(d: Partial<DriverData> | undefined | null): DriverData {
+const JOB_TYPES = ['taxi', 'delivery', 'race', 'emergency', 'parking', 'longdistance'] as const
+const CAP = 1_000_000_000
+
+/**
+ * Rebuilds the driver data from an untrusted save (localStorage can be edited): unknown keys are dropped, numbers are
+ * clamped to sane ranges, lists are length-limited and ids must exist. Anything missing falls back to the defaults.
+ */
+export function normalizeDriver(input: unknown): DriverData {
   const base = defaultDriver()
-  if (!d) return base
-  return { ...base, ...d, stats: { ...base.stats, ...(d.stats ?? {}) }, daily: d.daily ?? base.daily, history: d.history ?? [], claimed: d.claimed ?? [], achievements: d.achievements ?? [] }
+  if (!isObj(input)) return base
+  const stats = { ...base.stats }
+  if (isObj(input.stats)) for (const k of Object.keys(stats) as (keyof typeof stats)[]) stats[k] = int(input.stats[k], 0, 1_000_000, 0)
+  const history: HistoryEntry[] = []
+  if (Array.isArray(input.history))
+    for (const h of input.history.slice(0, 60)) {
+      if (!isObj(h)) continue
+      history.push({
+        uid: str(h.uid, 80),
+        type: oneOf(h.type, JOB_TYPES, 'taxi'),
+        title: str(h.title, 80),
+        points: int(h.points, 0, 100_000, 0),
+        xp: int(h.xp, 0, 100_000, 0),
+        score: int(h.score, 0, 100, 0),
+        seconds: int(h.seconds, 0, 86_400, 0),
+        day: str(h.day, 10),
+        at: int(h.at, 0, 8_640_000_000_000_000, 0),
+      })
+    }
+  const dailyDay = isObj(input.daily) ? str(input.daily.day, 10) : ''
+  const known = new Set(CHALLENGES.map((c) => c.id))
+  const dailyList: DailyChallenge[] = []
+  if (isObj(input.daily) && Array.isArray(input.daily.list))
+    for (const c of input.daily.list.slice(0, 3)) {
+      if (isObj(c) && typeof c.id === 'string' && known.has(c.id)) dailyList.push({ id: c.id, progress: int(c.progress, 0, CAP, 0), claimed: c.claimed === true })
+    }
+  const ach = new Set(ACHIEVEMENTS.map((a) => a.id))
+  return {
+    points: int(input.points, 0, CAP, 0),
+    totalEarned: int(input.totalEarned, 0, CAP, 0),
+    xp: int(input.xp, 0, CAP, 0),
+    completed: int(input.completed, 0, 1_000_000, 0),
+    history,
+    streak: int(input.streak, 0, 10_000, 0),
+    bestScore: int(input.bestScore, 0, 100, 0),
+    claimed: strArr(input.claimed, 400, 80),
+    achievements: strArr(input.achievements, 100, 40).filter((id) => ach.has(id)),
+    stats,
+    daily: { day: dailyDay, list: dailyList },
+    seq: int(input.seq, 0, CAP, 0),
+  }
 }
 
 // ---- levels ------------------------------------------------------------------------------------------------

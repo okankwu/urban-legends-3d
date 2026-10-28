@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { loadAppearance } from '../characters/appearance'
 import type { Appearance } from '../characters/appearance'
 import { loadProgress } from '../missions/progress'
+import { isObj, num, parseStored } from '../security'
 import type { ActiveMission, Banner, Marker, RaceHud } from '../missions/types'
 import { defaultDriver, normalizeDriver } from '../driver/rewards'
 import type { DriverData } from '../driver/rewards'
@@ -101,12 +102,40 @@ export interface GameState {
 
 const SETTINGS_KEY = 'ul3d.settings.v1'
 
+/** Reads saved settings through a whitelist: only known keys, with valid types and ranges, are ever applied. */
 function loadSettings(): Partial<GameState> {
+  let r: Record<string, unknown> | null = null
   try {
-    return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')
+    r = parseStored(localStorage.getItem(SETTINGS_KEY))
   } catch {
-    return {}
+    /* storage unavailable */
   }
+  if (!r) return {}
+  const src = r
+  const out: Partial<GameState> = {}
+  const n = (k: string, lo: number, hi: number) => (typeof src[k] === 'number' ? num(src[k], lo, hi, lo) : undefined)
+  const b = (k: string) => (typeof src[k] === 'boolean' ? (src[k] as boolean) : undefined)
+  const sensitivity = n('sensitivity', 0.2, 3)
+  if (sensitivity !== undefined) out.sensitivity = sensitivity
+  const camDistance = n('camDistance', 3, 10)
+  if (camDistance !== undefined) out.camDistance = camDistance
+  const volume = n('volume', 0, 1)
+  if (volume !== undefined) out.volume = volume
+  const uiScale = n('uiScale', 0.8, 1.5)
+  if (uiScale !== undefined) out.uiScale = uiScale
+  for (const k of ['music', 'showFps', 'captions', 'autoQuality', 'reduceMotion', 'highContrast', 'colorblind', 'gpsOverlay', 'gpsOn'] as const) {
+    const v = b(k)
+    if (v !== undefined) out[k] = v
+  }
+  if (['low', 'medium', 'high'].includes(src.quality as string)) out.quality = src.quality as Quality
+  if (['auto', 'on', 'off'].includes(src.touch as string)) out.touch = src.touch as 'auto' | 'on' | 'off'
+  if (['chase', 'cockpit'].includes(src.camMode as string)) out.camMode = src.camMode as 'chase' | 'cockpit'
+  if (isObj(src.bindings)) {
+    const bind: Record<string, string> = {}
+    for (const [id, code] of Object.entries(src.bindings).slice(0, 40)) if (/^[a-z]{2,12}$/.test(id) && typeof code === 'string' && /^[A-Za-z0-9]{1,20}$/.test(code)) bind[id] = code
+    out.bindings = bind
+  }
+  return out
 }
 
 export function saveSettings() {

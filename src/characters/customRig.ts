@@ -10,6 +10,57 @@ export const TARGET_HEIGHT = 1.7
 
 export class RigError extends Error {}
 
+/** Upper bounds on what an uploaded model may contain, so a hostile or accidental file cannot freeze or crash the tab. */
+const LIMITS = { nodes: 4000, meshes: 400, materials: 200, textures: 48, images: 48, accessors: 20000, skins: 8, animations: 100, bones: 400, triangles: 1_000_000 }
+
+/**
+ * Reads the glTF JSON of an upload (a .glb's JSON chunk, or the text of a .gltf) and rejects files that point at anything
+ * outside themselves (http(s)/file/relative URIs, which would make the browser fetch from elsewhere) or that are unreasonably
+ * large in structure. Runs before the file is handed to the parser.
+ */
+function inspectUpload(buffer: ArrayBuffer, ext: string): void {
+  let jsonText: string
+  const dv = new DataView(buffer)
+  const isGlb = buffer.byteLength >= 20 && dv.getUint32(0, true) === 0x46546c67
+  if (isGlb) {
+    if (dv.getUint32(4, true) !== 2) throw new RigError('Unsupported glTF version (only 2.0 is supported).')
+    if (dv.getUint32(8, true) > buffer.byteLength) throw new RigError('The file is truncated or its header is invalid.')
+    const jsonLen = dv.getUint32(12, true)
+    if (dv.getUint32(16, true) !== 0x4e4f534a || 20 + jsonLen > buffer.byteLength) throw new RigError('The file is not a valid .glb (no JSON chunk).')
+    jsonText = new TextDecoder().decode(new Uint8Array(buffer, 20, jsonLen))
+  } else {
+    if (ext === 'glb' || ext === 'vrm') throw new RigError('The file is not a binary glTF (.glb / .vrm).')
+    jsonText = new TextDecoder().decode(new Uint8Array(buffer))
+  }
+  let json: Record<string, unknown>
+  try {
+    json = JSON.parse(jsonText)
+  } catch {
+    throw new RigError('The file is not valid glTF (its JSON could not be read).')
+  }
+  if (!json || typeof json !== 'object' || Array.isArray(json)) throw new RigError('The file is not valid glTF.')
+  const list = (k: string) => (Array.isArray(json[k]) ? (json[k] as Record<string, unknown>[]) : [])
+  const caps: [string, number][] = [
+    ['nodes', LIMITS.nodes], ['meshes', LIMITS.meshes], ['materials', LIMITS.materials], ['textures', LIMITS.textures],
+    ['images', LIMITS.images], ['accessors', LIMITS.accessors], ['skins', LIMITS.skins], ['animations', LIMITS.animations],
+  ]
+  for (const [k, max] of caps) if (list(k).length > max) throw new RigError(`The model has too many ${k} (${list(k).length}; the limit is ${max}).`)
+  for (const k of ['buffers', 'images']) {
+    for (const item of list(k)) {
+      const uri = item && item.uri
+      if (uri === undefined) continue
+      if (typeof uri !== 'string' || !/^data:/i.test(uri)) throw new RigError('The model refers to an external file. Export it as a self-contained .glb (embedded buffers and textures).')
+    }
+  }
+}
+
+/** A loading manager that refuses every URL except embedded data / blob URLs, so a model can never trigger a network request. */
+function offlineManager() {
+  const m = new THREE.LoadingManager()
+  m.setURLModifier((url) => (/^(data|blob):/i.test(url) ? url : 'data:,'))
+  return m
+}
+
 export interface CustomRig {
   scene: THREE.Group
   clips: THREE.AnimationClip[]
@@ -133,9 +184,11 @@ export async function buildCustomRig(buffer: ArrayBuffer, fileName: string): Pro
   if (!ext || !['glb', 'gltf', 'vrm'].includes(ext)) throw new RigError('Unsupported file type. Use .glb, .gltf (self-contained) or .vrm.')
   if (buffer.byteLength > MAX_UPLOAD_MB * 1024 * 1024) throw new RigError(`File is larger than ${MAX_UPLOAD_MB} MB. Decimate the mesh or compress textures first.`)
 
-  const loader = new GLTFLoader()
+  inspectUpload(buffer, ext)
+  const loader = new GLTFLoader(offlineManager())
   loader.setMeshoptDecoder(MeshoptDecoder)
-  const draco = new DRACOLoader().setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/')
+  // the Draco decoder ships with the game (public/draco), so no third-party script is ever loaded
+  const draco = new DRACOLoader().setDecoderPath(import.meta.env.BASE_URL + 'draco/')
   loader.setDRACOLoader(draco)
   let gltf
   try {
@@ -158,6 +211,13 @@ export async function buildCustomRig(buffer: ArrayBuffer, fileName: string): Pro
     )
   }
   const skeleton = skinned[0].skeleton
+  if (skeleton.bones.length > LIMITS.bones) throw new RigError(`The skeleton has too many bones (${skeleton.bones.length}; the limit is ${LIMITS.bones}).`)
+  let tris = 0
+  gltf.scene.traverse((o) => {
+    const g = (o as THREE.Mesh).geometry
+    if (g) tris += (g.index ? g.index.count : g.getAttribute('position')?.count ?? 0) / 3
+  })
+  if (tris > LIMITS.triangles) throw new RigError(`The model has too many triangles (${Math.round(tris / 1000)}k; the limit is ${LIMITS.triangles / 1000}k). Decimate it first.`)
   const json = (gltf.parser.json ?? {}) as Record<string, unknown>
   const { map, vrm } = mapBones(skeleton, json)
 

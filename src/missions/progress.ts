@@ -1,6 +1,9 @@
 import { useGame } from '../store/game'
 import { rt } from '../engine/runtime'
+import { normalizeDriver } from '../driver/rewards'
 import type { DriverData } from '../driver/rewards'
+import { SPECS } from '../vehicles/specs'
+import { hexColor, int, isObj, num, parseStored, point, str, strArr } from '../security'
 
 const KEY = 'ul3d.progress.v1'
 
@@ -23,10 +26,40 @@ export interface Progress {
   driver?: DriverData
 }
 
+const VEHICLE_IDS = SPECS.map((s) => s.id as string)
+
+/** Validates a saved game (localStorage is editable): returns a clean Progress with every field bounded, or null. */
+export function sanitizeProgress(r: Record<string, unknown> | null): Progress | null {
+  if (!r) return null
+  const owned = strArr(r.ownedVehicles, 12, 20).filter((id) => VEHICLE_IDS.includes(id))
+  if (!owned.includes('subaru')) owned.unshift('subaru')
+  const paint: Record<string, string> = {}
+  if (isObj(r.paint)) for (const id of VEHICLE_IDS) if (hexColor(r.paint[id])) paint[id] = r.paint[id] as string
+  const car = point(r.car)
+  const player = point(r.player)
+  return {
+    money: int(r.money, 0, 1_000_000_000, 500),
+    health: num(r.health, 1, 100, 100),
+    completed: strArr(r.completed, 40, 40),
+    earnedTotal: int(r.earnedTotal, 0, 10_000_000_000, 0),
+    jobsDone: int(r.jobsDone, 0, 1_000_000, 0),
+    reputation: int(r.reputation, 0, 1_000_000, 0),
+    unlocks: strArr(r.unlocks, 30, 40),
+    hour: num(r.hour, 0, 24, 9),
+    resume: isObj(r.resume) && typeof r.resume.id === 'string' ? { id: str(r.resume.id, 40), step: int(r.resume.step, 0, 100, 0) } : null,
+    player,
+    car: car ? { ...car, yaw: num(isObj(r.car) ? r.car.yaw : 0, -10, 10, 0) } : null,
+    inShop: null,
+    ownedVehicles: owned,
+    currentVehicle: VEHICLE_IDS.includes(r.currentVehicle as string) && owned.includes(r.currentVehicle as string) ? (r.currentVehicle as string) : 'subaru',
+    paint,
+    driver: normalizeDriver(r.driver),
+  }
+}
+
 export function loadProgress(): Progress | null {
   try {
-    const raw = localStorage.getItem(KEY)
-    return raw ? (JSON.parse(raw) as Progress) : null
+    return sanitizeProgress(parseStored(localStorage.getItem(KEY)))
   } catch {
     return null
   }
