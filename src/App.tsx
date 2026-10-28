@@ -112,7 +112,7 @@ function Game() {
         <ShopFronts />
         <AudioSystem />
         <Suspense fallback={null}>
-          <Physics gravity={[0, -20, 0]} paused={phase !== 'playing'} timeStep="vary">
+          <Physics gravity={[0, -20, 0]} paused={phase !== 'playing'} timeStep="vary" updatePriority={-50}>
             <City />
             <Districts />
             <Player />
