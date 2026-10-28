@@ -85,7 +85,8 @@ export default function VehicleSelect() {
         // swap in place: the new vehicle takes the spot of the old one and the player is put on foot beside it
         const bx = rt.vehiclePos.x
         const bz = rt.vehiclePos.z
-        forceExit(bx + 2.6, bz)
+        // stand on the driver's side, clear of the car body (left = +x in chassis space)
+        forceExit(bx + Math.cos(rt.vehicleYaw) * 2.8, bz - Math.sin(rt.vehicleYaw) * 2.8)
         rt.vehicleSpawn = { x: bx, z: bz, yaw: rt.vehicleYaw }
         st.set({ currentVehicle: v.id, vehicleHealth: 100 })
         saveGame()

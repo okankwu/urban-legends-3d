@@ -380,8 +380,11 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
   const bottom = prep.bottom
   const hh = (prep.top - bottom) / 2
   // spawn: garage exit / mission teleports override, otherwise the starting spot
-  const sp = rt.vehicleSpawn ?? { x: SPAWN.car.x, z: SPAWN.car.z, yaw: Math.PI / 2 }
-  rt.vehicleSpawn = null
+  // read once and cleared in an effect: clearing during render is lost when React renders twice (dev) or a render is discarded
+  const sp = useMemo(() => rt.vehicleSpawn ?? { x: SPAWN.car.x, z: SPAWN.car.z, yaw: Math.PI / 2 }, [])
+  useEffect(() => {
+    rt.vehicleSpawn = null
+  }, [])
   const lightY = prep.lightY
   const lamp = prep.isBike ? 0.15 : 0.62
   return (
@@ -405,17 +408,18 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
       )}
       <Dashboard prep={prep} />
       <group>
-        {[-lamp, lamp].map((x) => (
+        {/* the generic light slabs would float off a sculpted body, so cars with their own detailed lights skip them */}
+        {!spec.glb?.sport && [-lamp, lamp].map((x) => (
           <mesh key={'b' + x} position={[x, lightY, -prep.halfL * 0.985]} material={brakeMat}>
             <boxGeometry args={[prep.isBike ? 0.12 : 0.5, 0.14, 0.06]} />
           </mesh>
         ))}
-        {[-lamp, lamp].map((x) => (
+        {!spec.glb?.sport && [-lamp, lamp].map((x) => (
           <mesh key={'h' + x} position={[x, lightY, prep.halfL * 0.985]} material={headMat}>
             <boxGeometry args={[prep.isBike ? 0.12 : 0.4, 0.14, 0.06]} />
           </mesh>
         ))}
-        {[-1, 1].map((sz) =>
+        {!spec.glb?.sport && [-1, 1].map((sz) =>
           [-1, 1].map((sx) => (
             <mesh key={'i' + sx + sz} position={[sx * (halfW + 0.01), lightY, sz * (prep.halfL * 0.9)]} material={sx > 0 ? indMatL : indMatR}>
               <boxGeometry args={[0.06, 0.12, 0.25]} />

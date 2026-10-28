@@ -2,7 +2,7 @@
 
 An original GTA-inspired third-person open-world city game that runs in the browser.
 Built with Vite, React, TypeScript, Three.js (React Three Fiber + Drei), Rapier physics and Zustand.
-All city geometry, vehicles (except the supplied Subaru, Desert Titan and Midnight Velocity), characters (except the supplied Meshy model), sounds and music are original / procedurally generated.
+All city geometry, vehicles (except the supplied Subaru and Desert Titan), characters (except the supplied Meshy model), sounds and music are original / procedurally generated.
 
 ## Run it
 
@@ -121,15 +121,15 @@ src/
   missions/   manager, mission definitions, race, markers, save/load
   police/     wanted level, arrest
   ui/         HUD, minimap, map, journal, menus, touch controls
-public/models/  player.glb, player2.glb, subaru.glb, titan.glb, velocity.glb
+public/models/  player.glb, player2.glb, subaru.glb, titan.glb
 ```
 
 ## Assets
 - `player.glb` / `player2.glb` – supplied Meshy character (Mixamo skeleton; walk/run clips only; idle/crouch/jump/seated are generated procedurally and retargeted).
 - `subaru.glb` – supplied Sketchfab Subaru Impreza WRX STI, optimised with `gltf-transform` (meshopt, WebP 512 px, mesh simplification). Check its licence/attribution before publishing.
-- `titan.glb` / `velocity.glb` – supplied Meshy AI models ("Desert Titan" off-road SUV, "Midnight Velocity" hypercar). Each was a single untextured-wheel mesh; they were welded, simplified, WebP-textured (1024 px), the four wheels split into `WHEEL_LF/RF/LR/RR` nodes and meshopt-compressed (about 0.9 MB and 0.7 MB). Check the Meshy licence for your plan before publishing.
+- `titan.glb` – supplied Meshy AI model ("Desert Titan" off-road SUV). It was a single-mesh model; they were welded, simplified, WebP-textured (1024 px), the four wheels split into `WHEEL_LF/RF/LR/RR` nodes and meshopt-compressed (about 0.9 MB and 0.7 MB). Check the Meshy licence for your plan before publishing.
 
-**Vehicle selection** – "Choose Vehicle" on the main and pause menus opens a showroom with a turntable preview, stats and owned/price state. Subaru, Desert Titan and Midnight Velocity are owned from the start; other vehicles can be bought there. From the pause menu the chosen vehicle replaces the current one where it stands.
+**Vehicle selection** – "Choose Vehicle" on the main and pause menus opens a showroom with a turntable preview, stats and owned/price state. Subaru and Desert Titan are owned from the start; other vehicles can be bought there. From the pause menu the chosen vehicle replaces the current one where it stands.
 - Everything else is generated in code. No audio files are used.
 
 ## What was tested

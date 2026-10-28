@@ -41,14 +41,31 @@ function labelTexture(text: string) {
 }
 
 const TRIM = '#e86f1c'
+const UPV = new THREE.Vector3(0, 1, 0)
+
+/** A thin square bar between two points (pillars and roof rails). */
+function Bar({ from, to, mat }: { from: [number, number, number]; to: [number, number, number]; mat: THREE.Material }) {
+  const { pos, quat, len } = useMemo(() => {
+    const a = new THREE.Vector3(...from)
+    const d = new THREE.Vector3(...to).sub(a)
+    const len = d.length()
+    return { pos: a.clone().addScaledVector(d, 0.5), quat: new THREE.Quaternion().setFromUnitVectors(UPV, d.normalize()), len }
+  }, [from, to])
+  return (
+    <mesh position={pos} quaternion={quat} material={mat}>
+      <boxGeometry args={[0.07, len, 0.07]} />
+    </mesh>
+  )
+}
 
 /** Bucket seats, centre tunnel, door cards and headliner so a coupe's cabin reads as a sports-car interior. */
 function SportInterior({ belt, zf, zBack, seatX, seatZ, halfW }: { belt: number; zf: number; zBack: number; seatX: number; seatZ: number; halfW: number }) {
-  const leather = useMemo(() => new THREE.MeshStandardMaterial({ color: '#0f1115', roughness: 0.7 }), [])
+  const leather = useMemo(() => new THREE.MeshStandardMaterial({ color: '#20242c', roughness: 0.7 }), [])
   const trim = useMemo(() => new THREE.MeshStandardMaterial({ color: TRIM, roughness: 0.6 }), [])
   const carbon = useMemo(() => new THREE.MeshStandardMaterial({ color: '#181a1f', roughness: 0.35, metalness: 0.4 }), [])
-  const inner = Math.min(0.78, halfW * 0.7)
+  const inner = Math.min(0.86, halfW * 0.8)
   const len = zf - zBack
+  const zRoof = zf - 0.4
   const seat = (x: number) => (
     <group key={x} position={[x, belt, seatZ - 0.3]}>
       <mesh position={[0, 0.08, 0.05]} material={leather}><boxGeometry args={[0.44, 0.12, 0.5]} /></mesh>
@@ -69,12 +86,19 @@ function SportInterior({ belt, zf, zBack, seatX, seatZ, halfW }: { belt: number;
       {/* door cards */}
       {[-1, 1].map((s) => (
         <group key={s}>
-          <mesh position={[s * inner, belt + 0.22, (zf + zBack) / 2]} material={leather}><boxGeometry args={[0.04, 0.44, len * 0.85]} /></mesh>
-          <mesh position={[s * (inner - 0.025), belt + 0.4, (zf + zBack) / 2]} material={trim}><boxGeometry args={[0.012, 0.014, len * 0.8]} /></mesh>
+          <mesh position={[s * inner, belt + 0.1, (zf + zBack) / 2]} material={leather}><boxGeometry args={[0.04, 0.2, len * 0.85]} /></mesh>
+          <mesh position={[s * (inner - 0.025), belt + 0.21, (zf + zBack) / 2]} material={trim}><boxGeometry args={[0.012, 0.014, len * 0.8]} /></mesh>
         </group>
       ))}
-      {/* headliner and rear bulkhead */}
-      <mesh position={[0, belt + 0.5, (seatZ + 0.05 + zBack) / 2]} material={carbon}><boxGeometry args={[inner * 2, 0.03, seatZ + 0.05 - zBack]} /></mesh>
+      {/* roof frame: headliner, A-pillars, header and side rails, so the windows have a frame to look through */}
+      <mesh position={[0, belt + 0.6, (zRoof + zBack) / 2]} material={carbon}><boxGeometry args={[inner * 1.5, 0.03, zRoof - zBack]} /></mesh>
+      <mesh position={[0, belt + 0.59, zRoof]} material={carbon}><boxGeometry args={[inner * 1.5, 0.06, 0.06]} /></mesh>
+      {[-1, 1].map((s) => (
+        <group key={'p' + s}>
+          <Bar from={[s * inner * 0.97, belt + 0.02, zf + 0.12]} to={[s * inner * 0.75, belt + 0.6, zRoof]} mat={carbon} />
+          <Bar from={[s * inner * 0.75, belt + 0.6, zRoof]} to={[s * inner * 0.75, belt + 0.6, zBack]} mat={carbon} />
+        </group>
+      ))}
       <mesh position={[0, belt + 0.25, zBack]} material={carbon}><boxGeometry args={[inner * 2, 0.5, 0.04]} /></mesh>
     </group>
   )

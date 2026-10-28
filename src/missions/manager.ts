@@ -186,7 +186,15 @@ function applyPending() {
   if (pendingApplied) return
   pendingApplied = true
   const sp = rt.pendingSpawn
-  if (sp?.player) teleportPlayer(sp.player.x, sp.player.y, sp.player.z)
+  if (sp?.player) {
+    let { x, z } = sp.player
+    // saved while driving: the player's position was the car's, so stand beside the car instead of inside it
+    if (sp.car && Math.hypot(x - sp.car.x, z - sp.car.z) < 3.5) {
+      x = sp.car.x + Math.cos(sp.car.yaw) * 2.8
+      z = sp.car.z - Math.sin(sp.car.yaw) * 2.8
+    }
+    teleportPlayer(x, sp.player.y, z)
+  }
   if (sp?.car) teleportCar(sp.car.x, sp.car.z, sp.car.yaw)
   rt.pendingSpawn = null
   if (pendingResume) {
