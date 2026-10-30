@@ -18,7 +18,6 @@ const yawQ = new THREE.Quaternion()
 const tiltQ = new THREE.Quaternion()
 const smoothTilt = new THREE.Quaternion()
 const UP = new THREE.Vector3(0, 1, 0)
-const invQ = new THREE.Quaternion()
 let smoothY = 0
 let cockpitWas = false
 const TILT_TAU = 0.12
@@ -75,6 +74,8 @@ export default function CameraRig() {
       const stable = yawQ.clone().multiply(smoothTilt)
       eye.set(rt.cockpit.eye[0], rt.cockpit.eye[1], rt.cockpit.eye[2]).applyQuaternion(stable).add(rt.vehiclePos)
       smoothY = !cockpitWas ? eye.y : smoothY + (eye.y - smoothY) * (1 - Math.exp(-dt / HEIGHT_TAU))
+      rt.cockpitFrame.quat.copy(stable)
+      rt.cockpitFrame.dy = smoothY - eye.y
       eye.y = smoothY
       cockpitWas = true
       camera.position.copy(eye)
@@ -82,9 +83,9 @@ export default function CameraRig() {
       qHead.setFromEuler(eHead)
       camera.quaternion.copy(stable).multiply(qHead)
       // remember where the camera sits relative to the chassis, so dashboard buttons are picked exactly where they are drawn
-      invQ.copy(rt.vehicleQuat).invert()
-      rt.camRel.pos.copy(eye).sub(rt.vehiclePos).applyQuaternion(invQ)
-      rt.camRel.quat.copy(invQ).multiply(camera.quaternion)
+      // (the dashboard lives in the stabilised frame, so the camera sits at the eye point with just the head angles)
+      rt.camRel.pos.set(rt.cockpit.eye[0], rt.cockpit.eye[1], rt.cockpit.eye[2])
+      rt.camRel.quat.copy(qHead)
       init = false
       return
     }

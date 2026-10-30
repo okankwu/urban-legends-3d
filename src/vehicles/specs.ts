@@ -16,10 +16,10 @@ export interface GlbConfig {
   zBack?: number
   /** take each wheel's radius from its length (the wheel nodes also hold arch/brake bits that inflate their height) */
   radiusFromLength?: boolean
+  /** the visible tyre's radius in metres, when the wheel nodes hold hidden parts that inflate their bounding box */
+  wheelRadius?: number
   /** extra suspension rest length (metres) to raise the body off the road */
   lift?: number
-  /** draw the sports-car interior in the cockpit view */
-  sport?: boolean
 }
 
 export interface Prepared {
@@ -39,7 +39,7 @@ export interface Prepared {
   lightY: number
   isBike?: boolean
   /** driver's eye position and dash geometry in chassis space (cockpit camera + dashboard) */
-  cockpit?: { eye: [number, number, number]; belt: number; zFront: number; /** rear of the cabin; when set the dash module lays a dark interior floor over the body's top face */ zBack?: number; noDash?: boolean; /** adds bucket seats, centre tunnel, door cards and a headliner */ sport?: boolean }
+  cockpit?: { eye: [number, number, number]; belt: number; zFront: number; /** rear of the cabin; when set the dash module lays a dark interior floor over the body's top face */ zBack?: number; noDash?: boolean }
 }
 
 export interface VehicleSpec {
@@ -63,7 +63,7 @@ export interface VehicleSpec {
 
 export const SPECS: VehicleSpec[] = [
   { id: 'subaru', name: 'Impreza STi', cls: 'Rally coupe', price: 0, mass: 1400, engine: 4200, maxSpeed: 52, reverseMax: 12, steer: 0.55, grip: 11, defaultColor: '#1f3f9a', blurb: 'The blue Subaru you started with. Quick and grippy.',
-    glb: { file: 'subaru.glb', length: 4.45, belt: 0.93, eye: [0.36, 0.28, -0.25], zFront: 0.8 } },
+    glb: { file: 'subaru.glb', length: 4.45, belt: 0.93, eye: [0.36, 0.28, -0.25], zFront: 0.8, wheelRadius: 0.2285, lift: 0.01 } },
   { id: 'titan', name: 'Desert Titan', cls: 'Off-road SUV', price: 0, mass: 2100, engine: 4900, maxSpeed: 44, reverseMax: 11, steer: 0.5, grip: 10.5, defaultColor: '#d9b7a6', blurb: 'Boxy, tall and tough, with chunky all-terrain tyres and a roof rack.',
     glb: { file: 'titan.glb', length: 4.5, belt: 0.98, eye: [0.38, 0.4, -0.35], zFront: 0.6, zBack: -1.9, radiusFromLength: true } },
   { id: 'sedan', name: 'Civic Sedan', cls: 'Sedan', price: 4500, mass: 1500, engine: 3700, maxSpeed: 42, reverseMax: 11, steer: 0.55, grip: 10, defaultColor: '#b3201f', blurb: 'Reliable family sedan.' },

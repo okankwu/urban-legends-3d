@@ -87,7 +87,7 @@ function Jobs() {
   }, [])
   const offers = useMemo(() => makeOffers(from, seed), [from, seed])
   const dists = useMemo(() => offers.map((o) => planRoute(from, null, o.start)?.length ?? Math.hypot(from.x - o.start.x, from.z - o.start.z)), [offers, from])
-  const order = offers.map((o, i) => i).sort((a, b) => Number(offers[a].minLevel > level) - Number(offers[b].minLevel > level))
+  const order = offers.map((_, i) => i).sort((a, b) => Number(offers[a].minLevel > level) - Number(offers[b].minLevel > level))
   return (
     <>
       {active && (

@@ -36,6 +36,8 @@ export const rt = {
   /** head look angles in the cockpit camera */
   /** the cockpit camera's pose in the chassis frame (stabilised eye + head look); dashboard picking uses it */
   camRel: { pos: new Vector3(), quat: new Quaternion() },
+  /** the cockpit camera's stabilised frame: the dashboard is drawn in it, so it never moves against the view (quat = body tilt low-passed, dy = eye height lag) */
+  cockpitFrame: { quat: new Quaternion(), dy: 0 },
   headYaw: 0,
   headPitch: 0,
   /** a driver-job prompt is using the E key (so E does not also exit the car) */

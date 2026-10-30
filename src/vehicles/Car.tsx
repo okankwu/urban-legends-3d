@@ -14,10 +14,13 @@ import { reportCrash } from '../police/wanted'
 import Dashboard from './Dashboard'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
+const frameQ = new THREE.Quaternion()
 export const glbUrl = (cfg: GlbConfig) => import.meta.env.BASE_URL + 'models/' + cfg.file
 // The wheel mounts stay where they were (SUSP_MOUNT); a longer rest length lets the springs hold the body about 9 cm higher
 const SUSP_MOUNT = 0.28
 const SUSP_REST = 0.37
+// the drawn road surface sits 2-5 cm above the physics ground (y = 0: asphalt 2 cm, paint up to 5 cm), so wheels are treated as that much bigger to rest on the drawn road
+const ROAD_SURFACE = 0.05
 
 /**
  * The Sketchfab car is ~180 separate meshes. Everything that is not a wheel is baked into one mesh per
@@ -124,6 +127,7 @@ export function prepareGLB(source: THREE.Object3D, cfg: GlbConfig): Prepared {
       wr = (wb.max.z - wb.min.z) / 2
       c.y = wb.min.y + wr
     }
+    if (cfg.wheelRadius) wr = cfg.wheelRadius
     const hub = new THREE.Group()
     hub.position.copy(c)
     const steer = new THREE.Group()
@@ -136,16 +140,6 @@ export function prepareGLB(source: THREE.Object3D, cfg: GlbConfig): Prepared {
     wheels.push({ hub, steer, spin, front: i < 2, cx: c.x, cy: c.y, cz: c.z, r: wr })
   })
 
-  if (cfg.sport) {
-    // the model's glass is baked into one double-sided shell; culling its back faces lets the driver see out through the windows
-    root.traverse((o) => {
-      const m = o as THREE.Mesh
-      if (m.isMesh && !Array.isArray(m.material) && m.material.side !== THREE.FrontSide) {
-        m.material.side = THREE.FrontSide
-        m.material.needsUpdate = true
-      }
-    })
-  }
   const stats = mergeStatic(holder, root)
   if (import.meta.env.DEV) console.info('[car] merged static meshes', stats)
   const b2 = new THREE.Box3().setFromObject(root)
@@ -164,7 +158,7 @@ export function prepareGLB(source: THREE.Object3D, cfg: GlbConfig): Prepared {
     cockpit: (() => {
       const ground = wheelCy - radius
       const belt = ground + cfg.belt
-      return { eye: [cfg.eye[0], belt + cfg.eye[1], cfg.eye[2]] as [number, number, number], belt, zFront: cfg.zFront, zBack: cfg.zBack, sport: cfg.sport }
+      return { eye: [cfg.eye[0], belt + cfg.eye[1], cfg.eye[2]] as [number, number, number], belt, zFront: cfg.zFront, zBack: cfg.zBack }
     })(),
   }
 }
@@ -189,6 +183,7 @@ function blobMaterial() {
 function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpec; damagePaint: boolean }) {
   const quality = useGame((s) => s.quality)
   const body = useRef<RapierRigidBody>(null)
+  const visual = useRef<THREE.Group>(null)
   const { world } = useRapier()
   const ctrl = useRef<ReturnType<typeof world.createVehicleController> | null>(null)
   const steer = useRef(0)
@@ -227,12 +222,12 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
     const c = world.createVehicleController(b)
     ctrl.current = c
     for (const w of prep.wheels) {
-      c.addWheel({ x: w.cx, y: w.cy + SUSP_MOUNT, z: w.cz }, { x: 0, y: -1, z: 0 }, { x: -1, y: 0, z: 0 }, SUSP_REST + (spec.glb?.lift ?? 0), w.r ?? prep.radius)
+      c.addWheel({ x: w.cx, y: w.cy + SUSP_MOUNT, z: w.cz }, { x: 0, y: -1, z: 0 }, { x: -1, y: 0, z: 0 }, SUSP_REST + (spec.glb?.lift ?? 0), (w.r ?? prep.radius) + ROAD_SURFACE)
     }
     for (let i = 0; i < nWheels; i++) {
       c.setWheelSuspensionStiffness(i, 38)
-      c.setWheelSuspensionCompression(i, 2.4)
-      c.setWheelSuspensionRelaxation(i, 3.2)
+      c.setWheelSuspensionCompression(i, 3.6)
+      c.setWheelSuspensionRelaxation(i, 4.8)
       c.setWheelMaxSuspensionTravel(i, 0.35)
       c.setWheelMaxSuspensionForce(i, 60000 * massScale)
       c.setWheelFrictionSlip(i, spec.grip)
@@ -251,6 +246,19 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
     if (!b || !c) return
     const st = useGame.getState()
     if (st.phase !== 'playing') return
+    const vis = visual.current
+    if (vis) {
+      if (st.inVehicle && st.camMode === 'cockpit' && vis.parent) {
+        // the chassis buzzes a little; the camera low-passes that, so draw the vehicle in the same low-passed frame
+        vis.parent.updateWorldMatrix(true, false)
+        vis.parent.getWorldQuaternion(frameQ).invert()
+        vis.quaternion.copy(frameQ).multiply(rt.cockpitFrame.quat)
+        vis.position.set(0, rt.cockpitFrame.dy, 0).applyQuaternion(frameQ)
+      } else if (vis.position.lengthSq() > 0 || vis.quaternion.w !== 1) {
+        vis.position.set(0, 0, 0)
+        vis.quaternion.identity()
+      }
+    }
     const dt = Math.min(rawDt, 0.05)
 
     const t = b.translation()
@@ -291,14 +299,14 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
         if (forwardSpeed > 1) brake = 1
         else engine = -(1 - Math.max(0, -forwardSpeed) / spec.reverseMax)
       } else {
-        brake = 0.08
+        brake = Math.abs(forwardSpeed) < 0.6 ? 1 : 0.08 // nearly stopped with no throttle: hold still
       }
       if (k.Space) brake = Math.max(brake, 1)
       steerTarget = ((k.KeyA || k.ArrowLeft ? 1 : 0) - (k.KeyD || k.ArrowRight ? 1 : 0)) * spec.steer
       // touch joystick: analog steering with a small dead zone and a gentle curve
       if (rt.stick.active && Math.abs(rt.stick.x) > 0.1) steerTarget = -Math.sign(rt.stick.x) * Math.min(1, Math.abs(rt.stick.x) ** 1.25 * 1.1) * spec.steer
     } else {
-      brake = st.inVehicle ? 0.5 : 0.35
+      brake = st.inVehicle ? 0.5 : 1 // parked: hold the wheels so it cannot creep or buzz
     }
 
     const maxSteer = 1 / (1 + Math.abs(forwardSpeed) * (prep.isBike ? 0.1 : 0.07))
@@ -400,6 +408,8 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
     >
       <CuboidCollider args={[halfW, hh, prep.halfL * 0.96]} position={[0, bottom + hh, 0]} mass={spec.mass * 0.64} />
       <CuboidCollider args={[Math.min(0.5, halfW), 0.1, 0.9]} position={[0, bottom + 0.1, 0]} mass={spec.mass * 0.36} />
+      {/* body, wheels and dash: in the cockpit view they are drawn in the camera's stabilised frame so nothing moves against the view */}
+      <group ref={visual}>
       <primitive object={prep.root} />
       {quality === 'low' && !prep.isBike && (
         <mesh position={[0, prep.wheelCy - prep.radius + 0.04, 0]} rotation-x={-Math.PI / 2} material={blobMaterial()} renderOrder={1}>
@@ -407,19 +417,19 @@ function Vehicle({ prep, spec, damagePaint }: { prep: Prepared; spec: VehicleSpe
         </mesh>
       )}
       <Dashboard prep={prep} />
+      </group>
       <group>
-        {/* the generic light slabs would float off a sculpted body, so cars with their own detailed lights skip them */}
-        {!spec.glb?.sport && [-lamp, lamp].map((x) => (
+        {[-lamp, lamp].map((x) => (
           <mesh key={'b' + x} position={[x, lightY, -prep.halfL * 0.985]} material={brakeMat}>
             <boxGeometry args={[prep.isBike ? 0.12 : 0.5, 0.14, 0.06]} />
           </mesh>
         ))}
-        {!spec.glb?.sport && [-lamp, lamp].map((x) => (
+        {[-lamp, lamp].map((x) => (
           <mesh key={'h' + x} position={[x, lightY, prep.halfL * 0.985]} material={headMat}>
             <boxGeometry args={[prep.isBike ? 0.12 : 0.4, 0.14, 0.06]} />
           </mesh>
         ))}
-        {!spec.glb?.sport && [-1, 1].map((sz) =>
+        {[-1, 1].map((sz) =>
           [-1, 1].map((sx) => (
             <mesh key={'i' + sx + sz} position={[sx * (halfW + 0.01), lightY, sz * (prep.halfL * 0.9)]} material={sx > 0 ? indMatL : indMatR}>
               <boxGeometry args={[0.06, 0.12, 0.25]} />

@@ -40,70 +40,6 @@ function labelTexture(text: string) {
   return t
 }
 
-const TRIM = '#e86f1c'
-const UPV = new THREE.Vector3(0, 1, 0)
-
-/** A thin square bar between two points (pillars and roof rails). */
-function Bar({ from, to, mat }: { from: [number, number, number]; to: [number, number, number]; mat: THREE.Material }) {
-  const { pos, quat, len } = useMemo(() => {
-    const a = new THREE.Vector3(...from)
-    const d = new THREE.Vector3(...to).sub(a)
-    const len = d.length()
-    return { pos: a.clone().addScaledVector(d, 0.5), quat: new THREE.Quaternion().setFromUnitVectors(UPV, d.normalize()), len }
-  }, [from, to])
-  return (
-    <mesh position={pos} quaternion={quat} material={mat}>
-      <boxGeometry args={[0.07, len, 0.07]} />
-    </mesh>
-  )
-}
-
-/** Bucket seats, centre tunnel, door cards and headliner so a coupe's cabin reads as a sports-car interior. */
-function SportInterior({ belt, zf, zBack, seatX, seatZ, halfW }: { belt: number; zf: number; zBack: number; seatX: number; seatZ: number; halfW: number }) {
-  const leather = useMemo(() => new THREE.MeshStandardMaterial({ color: '#20242c', roughness: 0.7 }), [])
-  const trim = useMemo(() => new THREE.MeshStandardMaterial({ color: TRIM, roughness: 0.6 }), [])
-  const carbon = useMemo(() => new THREE.MeshStandardMaterial({ color: '#181a1f', roughness: 0.35, metalness: 0.4 }), [])
-  const inner = Math.min(0.86, halfW * 0.8)
-  const len = zf - zBack
-  const zRoof = zf - 0.4
-  const seat = (x: number) => (
-    <group key={x} position={[x, belt, seatZ - 0.3]}>
-      <mesh position={[0, 0.08, 0.05]} material={leather}><boxGeometry args={[0.44, 0.12, 0.5]} /></mesh>
-      <mesh position={[0, 0.4, -0.2]} rotation={[-0.28, 0, 0]} material={leather}><boxGeometry args={[0.44, 0.66, 0.12]} /></mesh>
-      <mesh position={[-0.235, 0.36, -0.15]} rotation={[-0.28, 0, 0]} material={leather}><boxGeometry args={[0.07, 0.5, 0.2]} /></mesh>
-      <mesh position={[0.235, 0.36, -0.15]} rotation={[-0.28, 0, 0]} material={leather}><boxGeometry args={[0.07, 0.5, 0.2]} /></mesh>
-      <mesh position={[0, 0.5, -0.1]} rotation={[-0.28, 0, 0]} material={trim}><boxGeometry args={[0.2, 0.34, 0.012]} /></mesh>
-      <mesh position={[0, 0.82, -0.26]} rotation={[-0.28, 0, 0]} material={leather}><boxGeometry args={[0.24, 0.16, 0.1]} /></mesh>
-    </group>
-  )
-  return (
-    <group>
-      {seat(seatX)}
-      {seat(-seatX)}
-      {/* centre tunnel with a gear selector */}
-      <mesh position={[0, belt + 0.06, (zf + zBack) / 2 + 0.1]} material={carbon}><boxGeometry args={[0.2, 0.12, len * 0.7]} /></mesh>
-      <mesh position={[0, belt + 0.13, seatZ + 0.15]} material={trim}><boxGeometry args={[0.05, 0.03, 0.12]} /></mesh>
-      {/* door cards */}
-      {[-1, 1].map((s) => (
-        <group key={s}>
-          <mesh position={[s * inner, belt + 0.1, (zf + zBack) / 2]} material={leather}><boxGeometry args={[0.04, 0.2, len * 0.85]} /></mesh>
-          <mesh position={[s * (inner - 0.025), belt + 0.21, (zf + zBack) / 2]} material={trim}><boxGeometry args={[0.012, 0.014, len * 0.8]} /></mesh>
-        </group>
-      ))}
-      {/* roof frame: headliner, A-pillars, header and side rails, so the windows have a frame to look through */}
-      <mesh position={[0, belt + 0.6, (zRoof + zBack) / 2]} material={carbon}><boxGeometry args={[inner * 1.5, 0.03, zRoof - zBack]} /></mesh>
-      <mesh position={[0, belt + 0.59, zRoof]} material={carbon}><boxGeometry args={[inner * 1.5, 0.06, 0.06]} /></mesh>
-      {[-1, 1].map((s) => (
-        <group key={'p' + s}>
-          <Bar from={[s * inner * 0.97, belt + 0.02, zf + 0.12]} to={[s * inner * 0.75, belt + 0.6, zRoof]} mat={carbon} />
-          <Bar from={[s * inner * 0.75, belt + 0.6, zRoof]} to={[s * inner * 0.75, belt + 0.6, zBack]} mat={carbon} />
-        </group>
-      ))}
-      <mesh position={[0, belt + 0.25, zBack]} material={carbon}><boxGeometry args={[inner * 2, 0.5, 0.04]} /></mesh>
-    </group>
-  )
-}
-
 export default function Dashboard({ prep }: { prep: Prepared }) {
   const cp = prep.cockpit
   const root = useRef<THREE.Group>(null)
@@ -281,6 +217,7 @@ export default function Dashboard({ prep }: { prep: Prepared }) {
       return
     }
 
+    // (the whole vehicle, dash included, is drawn in the stabilised view frame by Vehicle, so it holds still against the camera)
     // steering wheel follows the steering input
     if (wheel.current) wheel.current.rotation.z = -rt.steer * 3.2
 
@@ -355,7 +292,6 @@ export default function Dashboard({ prep }: { prep: Prepared }) {
           <meshStandardMaterial color="#15171c" roughness={0.95} />
         </mesh>
       )}
-      {cp.sport && <SportInterior belt={belt} zf={zf} zBack={cp.zBack ?? zf - 1.9} seatX={ex} seatZ={ez} halfW={prep.halfW} />}
       {/* dash slab and cowl */}
       <mesh position={[0, belt - 0.11, zf - 0.27]}>
         <boxGeometry args={[width, 0.22, 0.54]} />
