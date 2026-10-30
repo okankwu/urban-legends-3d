@@ -210,3 +210,15 @@ html[data-contrast='high'] button { border: 2px solid #fff; }
 .veh-row b { font-size: 12px; min-width: 70px; text-align: right; }
 .veh-bar { display: block; height: 7px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
 .veh-bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+
+/* vehicle selection on short (landscape phone) screens: narrower panel, a scrolling list that keeps a few rows, tighter stats */
+@media (max-height: 520px) {
+  .veh-panel { width: min(300px, 46vw); padding: 10px; gap: 8px; bottom: 70px; }
+  .veh-panel h2 { font-size: 15px; }
+  .veh-list { flex: 1 1 auto; max-height: none; min-height: 84px; }
+  .veh-list .shop-line { padding: 8px 10px; font-size: 12px; }
+  .veh-stats { gap: 5px; padding-top: 6px; font-size: 11px; flex: 0 0 auto; }
+  .veh-blurb { display: none; }
+  .veh-row { grid-template-columns: 78px 1fr auto; gap: 6px; }
+  .veh-row:last-of-type { display: none; }
+}

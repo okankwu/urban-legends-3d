@@ -109,7 +109,7 @@ export default function VehicleSelect() {
 
   return (
     <>
-      <div className="creator-panel" role="listbox" aria-label="Vehicles">
+      <div className="creator-panel veh-panel" role="listbox" aria-label="Vehicles">
         <h2>Choose vehicle</h2>
         <div className="veh-list">
           {SPECS.map((x) => {
